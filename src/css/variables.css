@@ -1,0 +1,15 @@
+:root {
+  --base-root: 1rem;
+  --spacing-3xs: calc(0.125 * var(--base-root));
+  --spacing-2xs: calc(0.25 * var(--base-root));
+  --spacing-xs: calc(0.5 * var(--base-root));
+  --spacing-s: calc(0.75 * var(--base-root));
+  --spacing-m: calc(1 * var(--base-root));
+  --spacing-l: calc(1.5 * var(--base-root));
+  --spacing-xl: calc(2 * var(--base-root));
+  --spacing-2xl: calc(3 * var(--base-root));
+  --spacing-3xl: calc(4 * var(--base-root));
+  --spacing-4xl: calc(6 * var(--base-root));
+  --spacing-5xl: calc(8 * var(--base-root));
+  --spacing-6xl: calc(12 * var(--base-root));
+}

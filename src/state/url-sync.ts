@@ -1,13 +1,18 @@
 import { type State, type AppSettings, STEPS, type Curve, type PaletteConfig } from "./types";
 import { store, type Store } from "./store";
+import { snap } from "./derive";
 
 /**
- * Parse the current URL's search params into application state.
- * Expected format:
- *   ?L=0.985,0.97,...&p1=0.04,0.06,...&p1-origin=0.62,0.18,264
+ * Parse the URL hash fragment into application state.
+ *
+ * All numeric values are stored as integers (×1000) to keep the URL compact.
+ * Example: #L=985,970,955&p1=40,60,80&p1-origin=620,180,264000
  */
-export function parseSearchParams(): State | null {
-  const params = new URLSearchParams(location.search);
+export function parseHashParams(): State | null {
+  const raw = location.hash.slice(1); // strip leading #
+  if (!raw) return null;
+
+  const params = new URLSearchParams(raw);
 
   const lightnessRaw = params.get("L");
   if (!lightnessRaw) return null;
@@ -40,8 +45,7 @@ export function parseSearchParams(): State | null {
 }
 
 /**
- * Serialize the current state into search params and push to the URL.
- * Builds the query string manually to avoid %2C encoding of commas.
+ * Serialize current state into a URL hash fragment.
  * Uses replaceState to avoid flooding browser history on every slider drag.
  */
 export function syncToUrl(state: State): void {
@@ -49,16 +53,21 @@ export function syncToUrl(state: State): void {
 
   for (const [id, palette] of Object.entries(state.palettes)) {
     parts.push(`${id}=${curveToString(palette.chroma)}`);
-    parts.push(`${id}-origin=${palette.origin.l},${palette.origin.c},${palette.origin.h}`);
+    parts.push(
+      `${id}-origin=${enc(palette.origin.l)},${enc(palette.origin.c)},${enc(palette.origin.h)}`,
+    );
   }
 
   // Settings
   parts.push(`max-chroma=${state.settings.maxChroma}`);
   parts.push(`ceiling=${state.settings.ceilingGamut}`);
+  if (state.settings.propagateChanges) {
+    parts.push(`propagate=1`);
+    parts.push(`propagate-decay=${state.settings.propagateDecay}`);
+  }
 
   const qs = parts.join("&");
-  const url = `${location.pathname}?${qs}`;
-  history.replaceState(null, "", url);
+  history.replaceState(null, "", `#${qs}`);
 }
 
 /**
@@ -67,7 +76,7 @@ export function syncToUrl(state: State): void {
  */
 export function initUrlSync(s: Store = store): () => void {
   // Hydrate from URL on first load — URL wins over defaults
-  const parsed = parseSearchParams();
+  const parsed = parseHashParams();
   if (parsed) {
     s.load(parsed);
   } else {
@@ -80,6 +89,17 @@ export function initUrlSync(s: Store = store): () => void {
 
 // --- helpers ---
 
+/** Encode a value to its integer representation (×1000). */
+function enc(n: number): number {
+  return Math.round(n * 1000);
+}
+
+/** Decode an integer back, rounded to match snap precision. */
+function dec(n: number): number {
+  if (Number.isNaN(n)) return 0;
+  return snap(n / 1000);
+}
+
 function parseCurve(raw: string): Curve | null {
   const parts = raw.split(",").map(Number);
   if (parts.length !== STEPS.length) return null;
@@ -88,7 +108,7 @@ function parseCurve(raw: string): Curve | null {
   const curve = {} as Curve;
   for (let i = 0; i < STEPS.length; i++) {
     // biome-ignore lint/style/noNonNullAssertion: checked length above
-    curve[STEPS[i]!] = parts[i]!;
+    curve[STEPS[i]!] = dec(parts[i]!);
   }
   return curve;
 }
@@ -96,22 +116,26 @@ function parseCurve(raw: string): Curve | null {
 function parseOrigin(raw: string): { l: number; c: number; h: number } {
   const parts = raw.split(",").map(Number);
   return {
-    l: parts[0] ?? 0.5,
-    c: parts[1] ?? 0.15,
-    h: parts[2] ?? 264,
+    l: dec(parts[0] ?? 500),
+    c: dec(parts[1] ?? 150),
+    h: dec(parts[2] ?? 264000),
   };
 }
 
 function parseSettings(params: URLSearchParams): AppSettings {
   const maxChromaRaw = params.get("max-chroma");
   const ceilingRaw = params.get("ceiling");
+  const propagateRaw = params.get("propagate");
+  const propagateDecayRaw = params.get("propagate-decay");
   return {
     maxChroma: maxChromaRaw ? parseFloat(maxChromaRaw) : 0.35,
     ceilingGamut:
       ceilingRaw === "srgb" || ceilingRaw === "p3" || ceilingRaw === "rec2020" ? ceilingRaw : "p3",
+    propagateChanges: propagateRaw === "1",
+    propagateDecay: propagateDecayRaw ? parseFloat(propagateDecayRaw) : 0.5,
   };
 }
 
 function curveToString(curve: Curve): string {
-  return STEPS.map((s) => curve[s]).join(",");
+  return STEPS.map((s) => enc(curve[s])).join(",");
 }

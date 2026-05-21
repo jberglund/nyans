@@ -1,6 +1,10 @@
 @import "./css/reset.css";
+@import "./css/variables.css";
 @import "./css/form-controls.css";
 @import "./css/buttons.css";
+@import "./css/spacing.css";
+@import "./css/stack.css";
+@import "./css/misc.css";
 
 *,
 *::before,
@@ -43,7 +47,7 @@ body {
 .the-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: 100px 1fr;
+  grid-template-columns: 200px 1fr;
   grid-template-areas: "configuration steps";
 }
 
@@ -77,11 +81,14 @@ body {
 /* Origin swatch — clickable preview that opens the hidden color picker */
 .origin-swatch {
   display: block;
-  width: 100%;
-  aspect-ratio: 1;
+  width: 3rem;
   border-radius: 4px;
-  border: 1px solid #ccc;
+  border: none;
   cursor: pointer;
+  align-self: stretch;
+  justify-self: end;
+  z-index: 10;
+  margin: 4px;
 }
 
 .origin-text {
@@ -144,24 +151,12 @@ gamut-checker[color-gamut="rec2020+"] {
 .toolbar-setting {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: var(--spacing-m);
   font-size: 0.75rem;
-}
-
-.toolbar-setting input[type="range"] {
-  width: 80px;
-  height: auto;
-  writing-mode: horizontal-tb;
-  direction: ltr;
-}
-
-.toolbar-setting select {
-  font: inherit;
-  font-size: 0.75rem;
-  padding: 0.15rem 0.25rem;
-  border: 1px solid #ccc;
-  border-radius: 3px;
   background: #f8f8f8;
+  padding: 2px 2px 2px 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
 }
 
 .toolbar-setting-value {
@@ -174,7 +169,6 @@ gamut-checker[color-gamut="rec2020+"] {
 /* ------------------------------------------------------------------ */
 
 .palette-actions {
-  display: flex;
   gap: 0.25rem;
   margin-top: 0.4rem;
 }

@@ -48,6 +48,8 @@ class PaletteOrigin extends HTMLElement {
 
     render(
       html`
+        <div class="overlap">
+
         <label
           class="origin-swatch"
           for="origin-${this.#paletteId}"
@@ -72,6 +74,7 @@ class PaletteOrigin extends HTMLElement {
           aria-label="Origin color value"
           @change=${this.#onTextInput}
         />
+        </div>
         <div class="">
           <div class="origin-oklch">
             <span> L </span>

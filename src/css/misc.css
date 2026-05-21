@@ -1,0 +1,8 @@
+.overlap {
+  display: grid;
+  align-items: center;
+}
+
+.overlap > :where(*) {
+  grid-area: 1 / 1;
+}

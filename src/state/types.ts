@@ -46,6 +46,10 @@ export interface AppSettings {
   maxChroma: number;
   /** Gamut used for the ceiling / danger-zone on chroma sliders. */
   ceilingGamut: "srgb" | "p3" | "rec2020";
+  /** When true, slider changes ripple outward to neighboring steps. */
+  propagateChanges: boolean;
+  /** Decay factor for change propagation (0–1). Higher = broader spread. */
+  propagateDecay: number;
 }
 
 /** The full application state. */

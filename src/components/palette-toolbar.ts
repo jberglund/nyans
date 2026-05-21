@@ -1,6 +1,7 @@
 import { html, render } from "lit-html";
 import { live } from "lit-html/directives/live.js";
-import { store, DEFAULT_CHROMA } from "../state/store";
+import { store } from "../state/store";
+import { deriveChromaCurve } from "../state/derive";
 import type { State, PaletteConfig, AppSettings } from "../state/types";
 
 const CEILING_OPTIONS = [
@@ -33,7 +34,7 @@ class PaletteToolbar extends HTMLElement {
 
     render(
       html`
-        <div class="toolbar-bar">
+        <div class="stack-horizontal justify-end gap-m items-stretch py-xl">
           <button class="button button--primary" @click=${this.#addPalette}>+ Add palette</button>
 
           <label class="toolbar-setting">
@@ -60,6 +61,28 @@ class PaletteToolbar extends HTMLElement {
               )}
             </select>
           </label>
+
+          <label class="toolbar-setting" hotkey-key="l" hotkey-restore-focus>
+            <input
+              type="checkbox"
+              .checked=${settings.propagateChanges}
+              @change=${this.#onPropagateToggle}
+            />
+            <span>Linked editing</span>
+          </label>
+
+          <label class="toolbar-setting">
+            <span>Spread</span>
+            <input
+              type="number"
+              min="0.1"
+              max="0.9"
+              step="0.05"
+              .value=${live(String(settings.propagateDecay))}
+              ?disabled=${!settings.propagateChanges}
+              @input=${this.#onPropagateDecayInput}
+            />
+          </label>
         </div>
       `,
       this,
@@ -74,9 +97,10 @@ class PaletteToolbar extends HTMLElement {
 
   #addPalette = () => {
     const id = nextPaletteId(store.getState());
+    const origin = { l: 0.62, c: 0.18, h: 264 };
     const config: PaletteConfig = {
-      chroma: { ...DEFAULT_CHROMA },
-      origin: { l: 0.62, c: 0.18, h: 264 },
+      chroma: deriveChromaCurve(origin, store.getState().lightness),
+      origin,
     };
     store.addPalette(id, config);
   };
@@ -91,6 +115,16 @@ class PaletteToolbar extends HTMLElement {
   #onCeilingChange = (e: Event) => {
     const value = (e.target as HTMLSelectElement).value as AppSettings["ceilingGamut"];
     store.setCeilingGamut(value);
+  };
+
+  #onPropagateToggle = (e: Event) => {
+    const checked = (e.target as HTMLInputElement).checked;
+    store.setPropagateChanges(checked);
+  };
+
+  #onPropagateDecayInput = (e: Event) => {
+    const value = parseFloat((e.target as HTMLInputElement).value);
+    if (!isNaN(value)) store.setPropagateDecay(value);
   };
 }
 

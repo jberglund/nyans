@@ -17,4 +17,11 @@ export {
   type Swatch,
   type GamutLabel,
 } from "./derive";
-export { initUrlSync, parseSearchParams, syncToUrl } from "./url-sync";
+export { initUrlSync, parseHashParams, syncToUrl } from "./url-sync";
+export {
+  type BezierControls,
+  bezierToCurve,
+  bezierYAtX,
+  cubicBezierPoint,
+  BEZIER_PRESETS,
+} from "./bezier";

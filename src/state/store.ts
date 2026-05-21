@@ -1,4 +1,5 @@
 import {
+  STEPS,
   type State,
   type Step,
   type Curve,
@@ -6,55 +7,8 @@ import {
   type Origin,
   type AppSettings,
 } from "./types";
-import { deriveChromaCurve } from "./derive";
-
-// --- sensible defaults for a 20-step lightness curve ---
-const DEFAULT_LIGHTNESS: Curve = {
-  "0": 0.995,
-  "50": 0.985,
-  "100": 0.97,
-  "150": 0.945,
-  "200": 0.92,
-  "250": 0.895,
-  "300": 0.87,
-  "350": 0.81,
-  "400": 0.75,
-  "450": 0.685,
-  "500": 0.62,
-  "550": 0.575,
-  "600": 0.53,
-  "650": 0.485,
-  "700": 0.44,
-  "750": 0.39,
-  "800": 0.34,
-  "850": 0.29,
-  "900": 0.24,
-  "950": 0.17,
-};
-
-// --- sensible defaults for a 20-step chroma curve ---
-export const DEFAULT_CHROMA: Curve = {
-  "0": 0.02,
-  "50": 0.04,
-  "100": 0.06,
-  "150": 0.08,
-  "200": 0.1,
-  "250": 0.115,
-  "300": 0.13,
-  "350": 0.145,
-  "400": 0.16,
-  "450": 0.17,
-  "500": 0.18,
-  "550": 0.175,
-  "600": 0.17,
-  "650": 0.16,
-  "700": 0.15,
-  "750": 0.135,
-  "800": 0.12,
-  "850": 0.1,
-  "900": 0.08,
-  "950": 0.05,
-};
+import { deriveChromaCurve, snap } from "./derive";
+import { BEZIER_PRESETS, bezierToCurve, DEFAULT_START_L, DEFAULT_END_L } from "./bezier";
 
 export type Listener = (state: State) => void;
 
@@ -92,12 +46,31 @@ export class Store {
   // --- writers ---
 
   setLightness(step: Step, value: number): void {
-    this.#state.lightness[step] = value;
+    if (this.#state.settings.propagateChanges) {
+      this.#propagate(this.#state.lightness, step, value, 1);
+    } else {
+      this.#state.lightness[step] = snap(value);
+    }
     this.#scheduleNotify();
   }
 
+  /** Replace the entire lightness curve (reset / preset). */
+  setLightnessCurve(curve: Curve): void {
+    this.#state.lightness = { ...curve };
+    this.#notify();
+  }
+
   setChroma(paletteId: string, step: Step, value: number): void {
-    this.#state.palettes[paletteId].chroma[step] = value;
+    if (this.#state.settings.propagateChanges) {
+      this.#propagate(
+        this.#state.palettes[paletteId].chroma,
+        step,
+        value,
+        this.#state.settings.maxChroma,
+      );
+    } else {
+      this.#state.palettes[paletteId].chroma[step] = snap(value);
+    }
     this.#scheduleNotify();
   }
 
@@ -128,6 +101,16 @@ export class Store {
     this.#scheduleNotify();
   }
 
+  setPropagateChanges(value: boolean): void {
+    this.#state.settings.propagateChanges = value;
+    this.#scheduleNotify();
+  }
+
+  setPropagateDecay(value: number): void {
+    this.#state.settings.propagateDecay = value;
+    this.#scheduleNotify();
+  }
+
   /** Replace the entire state — used when hydrating from URL. */
   load(state: State): void {
     this.#state = structuredClone(state);
@@ -142,6 +125,21 @@ export class Store {
   }
 
   // --- internal ---
+
+  /** Apply a delta to every step, weighted by distance from the changed step. */
+  #propagate(curve: Curve, step: Step, newValue: number, max: number): void {
+    const delta = newValue - curve[step];
+    const changedIndex = STEPS.indexOf(step);
+    const decay = this.#state.settings.propagateDecay;
+
+    for (let i = 0; i < STEPS.length; i++) {
+      const s = STEPS[i];
+      const distance = Math.abs(i - changedIndex);
+      const weight = Math.pow(decay, distance);
+      const val = curve[s] + delta * weight;
+      curve[s] = snap(Math.max(0, Math.min(max, val)));
+    }
+  }
 
   #scheduleNotify(): void {
     if (!this.#dirty) {
@@ -173,17 +171,21 @@ export class Store {
 
   /** Create a store with sensible defaults and one palette. */
   static default(): Store {
+    const origin = { l: 0.62, c: 0.18, h: 264 };
+    const lightness = bezierToCurve(BEZIER_PRESETS[0].controls, DEFAULT_START_L, DEFAULT_END_L);
     return new Store({
-      lightness: { ...DEFAULT_LIGHTNESS },
+      lightness,
       palettes: {
         p1: {
-          chroma: { ...DEFAULT_CHROMA },
-          origin: { l: 0.62, c: 0.18, h: 264 },
+          chroma: deriveChromaCurve(origin, lightness),
+          origin,
         },
       },
       settings: {
         maxChroma: 0.35,
         ceilingGamut: "p3",
+        propagateChanges: false,
+        propagateDecay: 0.5,
       },
     });
   }

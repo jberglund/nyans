@@ -1,0 +1,77 @@
+@layer stack {
+  .stack,
+  .stack-horizontal {
+    flex-flow: column wrap;
+    justify-content: flex-start;
+    display: flex;
+  }
+
+  .stack-horizontal {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .items-start {
+    align-items: start;
+  }
+
+  .items-end {
+    align-items: end;
+  }
+
+  .items-center {
+    align-items: center;
+  }
+
+  .items-stretch {
+    align-items: stretch;
+  }
+
+  .self-stretch {
+    align-self: stretch;
+  }
+
+  .self-justify-start {
+    justify-self: start;
+  }
+
+  .self-justify-end {
+    justify-self: end;
+  }
+
+  .justify-start {
+    justify-content: start;
+  }
+
+  .justify-end {
+    justify-content: end;
+  }
+
+  .justify-center {
+    justify-content: center;
+  }
+
+  .justify-between {
+    justify-content: space-between;
+  }
+
+  .grow {
+    flex-grow: 1;
+  }
+
+  .shrink {
+    flex-shrink: 1;
+  }
+
+  .flex-1 {
+    flex: 1;
+  }
+
+  .nowrap {
+    flex-wrap: nowrap;
+  }
+
+  .inline-flex {
+    display: inline-flex;
+  }
+}

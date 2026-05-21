@@ -4,6 +4,7 @@ import "./components/step-slider";
 import "./components/lightness-editor";
 import "./components/palette-panel";
 import "./components/palette-toolbar";
+import { initHotkeys } from "./hotkey";
 import { initUrlSync } from "./state";
 import { store } from "./state/store";
 import { nextPaletteId } from "./components/palette-toolbar";
@@ -11,6 +12,9 @@ import type { PaletteConfig } from "./state/types";
 
 // Hydrate from URL (if params exist) and wire up persistence
 initUrlSync();
+
+// Global keyboard shortcuts for hotkey-key attributed elements
+initHotkeys();
 
 // ---------------------------------------------------------------------------
 // Palette DOM sync

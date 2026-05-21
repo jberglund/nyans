@@ -29,10 +29,10 @@ export function deriveSwatches(state: State, paletteId: string): Swatch[] {
 
     return {
       step,
-      l: round(l),
-      c: round(c),
-      h: round(h),
-      css: `oklch(${round(l)} ${round(c)} ${round(h)})`,
+      l: snap(l),
+      c: snap(c),
+      h: snap(h),
+      css: `oklch(${snap(l)} ${snap(c)} ${snap(h)})`,
     };
   });
 }
@@ -71,7 +71,7 @@ export function deriveChromaCurve(
   for (const step of STEPS) {
     const l = lightness[step];
     const ceiling = maxInGamutChroma(l, origin.h, DERIVATION_GAMUT);
-    result[step] = round(ceiling * fillRatio);
+    result[step] = snap(ceiling * fillRatio);
   }
   return result as Curve;
 }
@@ -84,8 +84,9 @@ export function originToHex(origin: { l: number; c: number; h: number }): string
   return color.to("srgb").toString({ format: "hex" });
 }
 
-function round(n: number): number {
-  return Math.round(n * 1000) / 1000;
+/** Round to 3 decimal places. Single source of truth for all value rounding. */
+export function snap(n: number): number {
+  return Number(n.toFixed(3));
 }
 
 // ---------------------------------------------------------------------------
@@ -145,5 +146,5 @@ export function maxInGamutChroma(l: number, h: number, gamut: string): number {
     }
   }
 
-  return round(lo);
+  return snap(lo);
 }

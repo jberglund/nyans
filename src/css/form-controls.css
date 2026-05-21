@@ -1,6 +1,23 @@
-input {
+input,
+select {
   font: inherit;
   color: #454545;
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+input:where([type="text"], [type="number"]) {
+  padding: 0.15rem 0.25rem;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #f8f8f8;
+}
+
+select {
+  padding: 0.15rem 0.25rem;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #f8f8f8;
 }
 
 input[type="range"][orient="vertical"] {
@@ -15,6 +32,7 @@ input[type="range"][orient="vertical"] {
   --thumb-width: 30px;
   --thumb-height: 2px;
   --thumb-color: currentColor;
+  --thumb-opacity: 0.5;
   --thumb-radius: 4px;
   --track-bg: #f7f7f7;
   --ceiling-bg: transparent;
@@ -54,7 +72,21 @@ input[type="range"]::-webkit-slider-thumb {
   height: var(--thumb-height);
   border-radius: var(--thumb-radius);
   background: var(--thumb-color);
+  opacity: var(--thumb-opacity);
   border: none;
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease,
+    opacity 0.15s ease;
+}
+
+input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scaleY(2);
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scaleY(1.8);
+  filter: brightness(0.85);
 }
 
 /* Firefox */
@@ -63,7 +95,21 @@ input[type="range"]::-moz-range-thumb {
   height: var(--thumb-height);
   border-radius: var(--thumb-radius);
   background: var(--thumb-color);
+  opacity: var(--thumb-opacity);
   border: none;
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease,
+    opacity 0.15s ease;
+}
+
+input[type="range"]:hover::-moz-range-thumb {
+  transform: scaleY(1.4);
+}
+
+input[type="range"]:active::-moz-range-thumb {
+  transform: scaleY(1.8);
+  filter: brightness(0.85);
 }
 
 /* Firefox: make track fill the input and stay invisible */
@@ -81,13 +127,9 @@ input[type="range"]::-moz-range-track {
 .step-number {
   width: 100%;
   text-align: right;
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
   border: 1px solid var(--track-bg);
-  border-radius: 2px;
   background: transparent;
   padding: 2px 3px;
-  appearance: none;
   -moz-appearance: textfield;
 }
 
