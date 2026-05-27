@@ -1,0 +1,82 @@
+/* ---------------------------------------------------------------------------
+   Bezier Editor — SVG plot styles
+   --------------------------------------------------------------------------- */
+
+.bezier-editor__svg {
+  display: block;
+  touch-action: none;
+  user-select: none;
+  overflow: visible;
+}
+
+/* Plot background rectangle */
+.bezier-editor__plot-bg {
+  fill: transparent;
+  stroke: var(--text-low);
+  stroke-width: 0.5;
+}
+
+/* X/Y axis lines */
+.bezier-editor__axis {
+  stroke: var(--text-low);
+  stroke-width: 0.5;
+  display: none;
+}
+
+/* Dashed control lines P0→P1 and P3→P2 */
+.bezier-editor__control-line {
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-opacity: 0.3;
+  stroke-dasharray: 4 3;
+  animation: dash-march 2s linear infinite;
+}
+
+@keyframes dash-march {
+  to {
+    stroke-dashoffset: -14;
+  }
+}
+
+/* Draggable diamond handle for P0 / P3 (anchor endpoints, vertical-only) */
+.bezier-editor__handle--anchor {
+  cursor: ns-resize;
+}
+
+/* Vertical step grid + horizontal reference lines */
+.bezier-editor__grid-line {
+  stroke: var(--border-default);
+  stroke-width: 0.5;
+  stroke-dasharray: 2 2;
+}
+
+/* Step diamonds */
+.bezier-editor__step-diamond {
+  fill: var(--text-low);
+  stroke: var(--text-mid);
+  stroke-width: 0.5;
+}
+
+/* Draggable handle (P1 / P2) — diamond (rotated square) */
+.bezier-editor__handle {
+  stroke: var(--accent);
+  stroke-width: 2;
+  cursor: grab;
+  fill: var(--surface-default);
+  transition: fill 0.15s ease;
+}
+
+.bezier-editor__handle--active {
+  fill: var(--accent);
+}
+
+/* Inner diamond of the draggable handle */
+.bezier-editor__handle-dot {
+  fill: var(--accent);
+  pointer-events: none;
+  transition: fill 0.15s ease;
+}
+
+.bezier-editor__handle-dot--active {
+  fill: var(--surface-default);
+}

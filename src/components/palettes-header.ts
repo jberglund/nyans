@@ -1,0 +1,90 @@
+import { html, render } from "lit-html";
+import { live } from "lit-html/directives/live.js";
+import { store } from "../state/store";
+import "./number-slider";
+import { linkedEditingTip, spreadTip } from "./tool-tip-content";
+import type { State } from "../state/types";
+
+/**
+ * Header bar above the palette list.
+ * Left: "Palettes" heading + add button. Right: Linked editing + Spread.
+ */
+class PalettesHeader extends HTMLElement {
+  #unsub: (() => void) | null = null;
+
+  connectedCallback() {
+    this.#render();
+    this.#unsub = store.subscribe(this.#onStoreChange);
+  }
+
+  disconnectedCallback() {
+    this.#unsub?.();
+  }
+
+  #render() {
+    const { settings } = store.getState();
+
+    render(
+      html`
+        <div class="toolbar-bar">
+          <h2>Palettes</h2>
+          <button class="button button--primary" @click=${this.#addPalette}>+ Add palette</button>
+
+          <div class="stack-horizontal gap-m ml-auto">
+            <label
+              class="toolbar-setting inline-flex items-center gap-m fs-s surface-raised border-default"
+              hotkey-key="l"
+              hotkey-restore-focus
+            >
+              <input
+                id="linked-editing"
+                type="checkbox"
+                .checked=${settings.propagateChanges}
+                @change=${this.#onPropagateToggle}
+              />
+              <span>Linked editing<tool-tip>${linkedEditingTip}</tool-tip></span>
+            </label>
+
+            <label
+              class="toolbar-setting inline-flex items-center gap-m fs-s surface-raised border-default"
+            >
+              <span>Spread<tool-tip>${spreadTip}</tool-tip></span>
+              <number-slider>
+                <input
+                  id="spread-decay"
+                  type="number"
+                  min="0.1"
+                  max="0.9"
+                  step="0.05"
+                  .value=${live(String(settings.propagateDecay))}
+                  ?disabled=${!settings.propagateChanges}
+                  @input=${this.#onPropagateDecayInput}
+                />
+              </number-slider>
+            </label>
+          </div>
+        </div>
+      `,
+      this,
+    );
+  }
+
+  #onStoreChange = (_state: State) => {
+    this.#render();
+  };
+
+  #addPalette = () => store.addDefaultPalette();
+
+  #onPropagateToggle = (e: Event) => {
+    const checked = (e.target as HTMLInputElement).checked;
+    store.setPropagateChanges(checked);
+  };
+
+  #onPropagateDecayInput = (e: Event) => {
+    const value = parseFloat((e.target as HTMLInputElement).value);
+    if (!isNaN(value)) store.setPropagateDecay(value);
+  };
+}
+
+customElements.define("palettes-header", PalettesHeader);
+export default PalettesHeader;
