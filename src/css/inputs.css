@@ -1,0 +1,313 @@
+/* ------------------------------------------------------------------ */
+/* Form control tokens                                                 */
+/* ------------------------------------------------------------------ */
+
+@layer forms.public {
+  :root {
+    --interaction-radius: 4px;
+    --interaction-transition-duration-quick: 150ms;
+    --interaction-transition-easing-default: ease;
+
+    --input-border-radius: var(--interaction-radius);
+    --input-focus-ring-color: var(--accent);
+    --input-background: var(--surface-sunken);
+    --input-foreground: var(--text-high);
+    --input-border: var(--border-default);
+    --input-placeholder: var(--text-low);
+    --input-checked-foreground: var(--accent);
+
+    --border-control-hover: var(--neutral-250);
+    --border-control-focused: var(--accent);
+    --border-control-error: var(--neutral-500);
+    --foreground-muted: var(--text-low);
+
+    --size-control-height-medium: 1.5rem;
+    --size-control-height-small: 1.25rem;
+    --size-control-height-large: 2rem;
+  }
+
+  :where(.input, .select, .textarea, .checkbox, .radio) {
+    --_input-background: var(--input-background);
+    --_input-foreground: var(--input-foreground);
+    --_input-border: var(--input-border);
+  }
+
+  :where(.input, .select, .textarea) {
+    --_input-height: var(--size-control-height-medium);
+    --_input-font-size: var(--font-size-s);
+    --_input-padding-inline: var(--spacing-s);
+  }
+
+  :where(.input, .select, .textarea):where([data-size="small"]) {
+    --_input-height: var(--size-control-height-small);
+    --_input-font-size: var(--font-size-xs);
+    --_input-padding-inline: var(--spacing-xs);
+  }
+
+  :where(.input, .select, .textarea):where([data-size="large"]) {
+    --_input-height: var(--size-control-height-large);
+    --_input-font-size: var(--font-size-m);
+    --_input-padding-inline: var(--spacing-m);
+  }
+
+  :where(.radio, .checkbox) {
+    --_input-height: 1.5em;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Base form styles                                                    */
+/* ------------------------------------------------------------------ */
+
+@layer forms.base {
+  :where(.input, .select, .textarea, .checkbox, .radio) {
+    appearance: none;
+    font: inherit;
+    background: var(--_input-background);
+    color: var(--_input-foreground);
+    border-color: var(--_input-border);
+    border-radius: var(--input-border-radius);
+    min-height: var(--_input-height);
+    font-size: var(--_input-font-size);
+    outline-offset: 0px;
+    transition:
+      outline-color var(--interaction-transition-duration-quick)
+        var(--interaction-transition-easing-default),
+      border-color var(--interaction-transition-duration-quick)
+        var(--interaction-transition-easing-default);
+    border-style: solid;
+    border-width: 1px;
+    outline: 1px solid #0000;
+
+    &::placeholder {
+      color: var(--input-placeholder);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+    }
+  }
+
+  :where(.input, .select, .textarea) {
+    padding-inline: var(--_input-padding-inline);
+    padding-block: var(--spacing-2xs);
+  }
+
+  :where(.radio, .checkbox) {
+    width: var(--_input-height);
+    aspect-ratio: 1;
+    cursor: pointer;
+    place-items: center;
+    display: grid;
+  }
+
+  :where(.radio) {
+    border-radius: 50%;
+  }
+
+  :where(.radio, .checkbox)::after {
+    content: "";
+    aspect-ratio: 1;
+    color: #0000;
+    pointer-events: none;
+    width: 90%;
+    transition: color var(--interaction-transition-duration-quick)
+      var(--interaction-transition-easing-default);
+    background-color: currentColor;
+    mask-position: center;
+    mask-size: contain;
+    mask-repeat: no-repeat;
+
+    @supports (width: round(90%, 2px)) {
+      width: round(90%, 2px);
+    }
+  }
+
+  :where(.radio)::after {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='8' /%3E%3C/svg%3E");
+  }
+
+  :where(.checkbox)::after {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z' /%3E%3C/svg%3E");
+  }
+
+  :where(.select) {
+    background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' fill='%23666' viewBox='0 0 24 24'><path d='M12.7 15.7a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1 1.4-1.4l5.3 5.29 5.3-5.3a1 1 0 1 1 1.4 1.42z'/></svg>");
+    background-position: calc(100% - var(--_input-padding-inline, 1em));
+    background-repeat: no-repeat;
+    background-size: 1.5em;
+    padding-inline-end: calc(var(--_input-padding-inline, 1em) + 1.5em + var(--spacing-2xs));
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Form states                                                         */
+/* ------------------------------------------------------------------ */
+
+@layer forms.state {
+  :where(.input, .select, .textarea, .checkbox, .radio):hover:not(:focus-visible, [disabled]) {
+    border-color: var(--border-control-hover);
+    outline-color: var(--border-control-hover);
+  }
+
+  :where(.input, .select, .textarea, .checkbox, .radio):focus-visible {
+    border-color: var(--border-control-focused);
+    outline-color: var(--input-focus-ring-color);
+  }
+
+  :where(.checkbox, .radio):checked::after {
+    color: var(--input-checked-foreground);
+  }
+
+  :where(.input, .textarea, .select):where([aria-invalid="true"]):not(:focus-visible) {
+    --_input-border: var(--border-control-error);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Base select (progressive enhancement)                               */
+/* ------------------------------------------------------------------ */
+
+@layer forms.base-select {
+  @supports (appearance: base-select) {
+    :where(.select) {
+      appearance: base-select;
+      min-width: 10rem;
+      background-image: none;
+      align-items: center;
+      padding-inline-end: var(--_input-padding-inline);
+    }
+
+    :where(.select)::picker-icon {
+      color: var(--_input-foreground);
+      opacity: 0.6;
+    }
+
+    :where(.select)::picker(select) {
+      appearance: base-select;
+      background: var(--surface-raised, var(--input-background));
+      color: var(--_input-foreground);
+      border: 1px solid var(--_input-border);
+      border-radius: var(--input-border-radius);
+      padding: var(--spacing-2xs);
+      box-shadow: var(--shadow-default);
+    }
+
+    :where(.select) option {
+      padding-block: var(--spacing-2xs);
+      padding-inline: var(--spacing-2xs) var(--spacing-s);
+      border-radius: calc(var(--input-border-radius) - 2px);
+      color: var(--text-high);
+      outline-offset: 0;
+    }
+
+    :where(.select) option:hover {
+      background-color: var(--surface-hover);
+    }
+
+    :where(.select) option:checked {
+      font-weight: var(--font-weight-medium);
+    }
+
+    :where(.select) option::checkmark {
+      color: var(--input-checked-foreground);
+    }
+
+    :where(.select) option:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    :where(.select) optgroup {
+      font-weight: var(--font-weight-medium);
+      font-size: var(--font-size-xs);
+      color: var(--foreground-muted);
+      padding-block: var(--spacing-2xs);
+    }
+
+    :where(.select) hr {
+      border: none;
+      border-block-start: 1px solid var(--_input-border);
+      margin-block: var(--spacing-2xs);
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Range inputs                                                        */
+/* ------------------------------------------------------------------ */
+
+:where(.range-input)[orient="vertical"] {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 100%;
+  cursor: ns-resize;
+}
+
+:where(.range-input) {
+  --wrapper-height: 30px;
+  --thumb-width: 22px;
+  --thumb-height: 4px;
+  --thumb-color: var(--neutral-450);
+  --thumb-border: 1px solid var(--neutral-600);
+  --thumb-opacity: 0.5;
+  --thumb-radius: 4px;
+
+  position: relative;
+  z-index: 3;
+  height: var(--wrapper-height);
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  background: transparent;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+}
+:where(.range-input):focus-visible {
+  --thumb-color: var(--neutral-850);
+}
+input[type="number"]::-webkit-inner-spin-button {
+  display: none;
+}
+
+:where(.range-input):focus {
+  outline: none;
+}
+
+:where(.range-input)::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+:where(.range-input)::-moz-range-track {
+  height: 100%;
+  background: transparent;
+}
+
+:where(.range-input)::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--thumb-width);
+  height: var(--thumb-height);
+  border-radius: var(--thumb-radius);
+  background: var(--thumb-color);
+  opacity: var(--thumb-opacity);
+  border: var(--thumb-border);
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease,
+    opacity 0.15s ease;
+}
+
+:where(.range-input)::-moz-range-thumb {
+  width: var(--thumb-width);
+  height: var(--thumb-height);
+  border-radius: var(--thumb-radius);
+  background: var(--thumb-color);
+  opacity: var(--thumb-opacity);
+  border: var(--thumb-border);
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease,
+    opacity 0.15s ease;
+}

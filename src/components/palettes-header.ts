@@ -30,28 +30,28 @@ class PalettesHeader extends HTMLElement {
           <h2>Palettes</h2>
           <button class="button button--primary" @click=${this.#addPalette}>+ Add palette</button>
 
-          <div class="stack-horizontal gap-m ml-auto">
+          <div class="stack-horizontal gap-m ml-auto items-stretch">
             <label
-              class="toolbar-setting inline-flex items-center gap-m fs-s surface-raised border-default"
+              class="p-2xs inline-flex items-center gap-xs fs-s surface-raised border-default"
               hotkey-key="l"
               hotkey-restore-focus
             >
               <input
                 id="linked-editing"
+                class="checkbox"
                 type="checkbox"
                 .checked=${settings.propagateChanges}
                 @change=${this.#onPropagateToggle}
               />
-              <span>Linked editing<tool-tip>${linkedEditingTip}</tool-tip></span>
+              <span>Linked editing<tool-tip class="ml-2xs">${linkedEditingTip}</tool-tip></span>
             </label>
 
-            <label
-              class="toolbar-setting inline-flex items-center gap-m fs-s surface-raised border-default"
-            >
-              <span>Spread<tool-tip>${spreadTip}</tool-tip></span>
+            <label class="p-2xs inline-flex items-center gap-xs fs-s surface-raised border-default">
+              <span>Spread<tool-tip class="ml-2xs">${spreadTip}</tool-tip></span>
               <number-slider>
                 <input
                   id="spread-decay"
+                  class="input"
                   type="number"
                   min="0.1"
                   max="0.9"

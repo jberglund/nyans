@@ -101,6 +101,7 @@ class ExportDialog extends HTMLElement {
                 <span class="export-dialog__label">Name prefix</span>
                 <input
                   id="export-prefix"
+                  class="input"
                   type="text"
                   .value=${live(this.#prefix)}
                   @input=${this.#onPrefixInput}
@@ -124,6 +125,7 @@ class ExportDialog extends HTMLElement {
                       />
                       <input
                         id="export-name-${id}"
+                        class="input"
                         type="text"
                         .value=${live(this.#names[id] ?? id)}
                         @input=${(e: Event) => this.#onNameInput(id, e)}

@@ -57,7 +57,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   maxChroma: 0.35,
   ceilingGamut: "p3",
-  propagateChanges: false,
+  propagateChanges: true,
   propagateDecay: 0.5,
 };
 

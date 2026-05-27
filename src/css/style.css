@@ -2,6 +2,7 @@
 @import "./variables.css";
 @import "./color.css";
 @import "./form-controls.css";
+@import "./inputs.css";
 @import "./buttons.css";
 @import "./spacing.css";
 @import "./stack.css";
@@ -35,6 +36,7 @@
     sans-serif;
 
   color: var(--text-mid);
+  background: var(--surface-default);
 }
 
 #app {
@@ -48,6 +50,10 @@
 #palettes {
   display: grid;
   gap: 3rem;
+}
+
+.icon {
+  color: var(--accent);
 }
 
 palette-panel {
@@ -82,6 +88,7 @@ palette-panel {
 step-slider {
   border-right: 1px solid var(--border-default);
 }
+
 .step-item {
   height: 100%;
   min-height: 12rem;
@@ -136,15 +143,6 @@ step-slider {
   border-bottom: 1px solid var(--border-default);
   margin-bottom: 0.5rem;
   flex-wrap: wrap;
-}
-
-.toolbar-setting {
-  display: flex;
-  align-items: center;
-  background: var(--surface-raised);
-
-  border: 1px solid var(--border-default);
-  border-radius: 8px;
 }
 
 .toolbar-setting-value {

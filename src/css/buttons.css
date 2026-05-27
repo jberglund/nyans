@@ -1,39 +1,103 @@
 /* ------------------------------------------------------------------ */
-/* Buttons                                                            */
+/* Button tokens                                                       */
 /* ------------------------------------------------------------------ */
 
-.button {
-  font: inherit;
-  font-size: 0.8rem;
-  line-height: 1;
-  padding: 0.25rem 0.6rem;
-  border: 1px solid var(--border-default);
-  border-radius: 4px;
-  background: var(--surface-raised);
-  cursor: pointer;
-  font-weight: 600;
-  display: inline-flex;
-  gap: 0.25rem;
-  align-items: center;
+@layer buttons.public {
+  :root {
+    --button-border-radius: var(--interaction-radius);
+    --button-font-weight: var(--font-weight-medium);
+    --button-focus-ring-color: var(--accent);
+  }
+
+  :where(.button:not([data-variant]), .button[data-variant="filled"]) {
+    --_button-background: var(--surface-sunken);
+    --_button-foreground: var(--text-mid);
+    --_button-border: var(--border-default);
+  }
+
+  :where(.button[data-variant="plain"]) {
+    --_button-background: transparent;
+    --_button-foreground: var(--text-mid);
+    --_button-border: transparent;
+  }
+
+  :where(.button:not([data-size]), .button[data-size="medium"]) {
+    --_button-height: var(--size-control-height-medium);
+    --_button-padding-inline: var(--spacing-m);
+    --_button-font-size: var(--font-size-s);
+    --_button-gap: var(--spacing-xs);
+  }
+
+  :where(.button[data-size="small"]) {
+    --_button-height: var(--size-control-height-small);
+    --_button-padding-inline: var(--spacing-s);
+    --_button-font-size: var(--font-size-xs);
+    --_button-gap: var(--spacing-2xs);
+  }
+
+  :where(.button[data-size="large"]) {
+    --_button-height: var(--size-control-height-large);
+    --_button-padding-inline: var(--spacing-l);
+    --_button-font-size: var(--font-size-m);
+    --_button-gap: var(--spacing-xs);
+  }
 }
 
-.button:hover {
-  background: var(--surface-hover);
+/* ------------------------------------------------------------------ */
+/* Base button styles                                                  */
+/* ------------------------------------------------------------------ */
+
+@layer buttons.base {
+  :where(.button) {
+    appearance: none;
+    font: inherit;
+    gap: var(--_button-gap);
+    font-size: var(--_button-font-size);
+    font-weight: var(--button-font-weight);
+    background: var(--_button-background);
+    color: var(--_button-foreground);
+    border: 1px solid var(--_button-border);
+    border-radius: var(--button-border-radius);
+    min-height: var(--_button-height);
+    padding-block: 0;
+    padding-inline: var(--_button-padding-inline);
+    text-align: center;
+    outline-offset: 0.125rem;
+    cursor: pointer;
+    outline: 2px solid #0000;
+    justify-content: center;
+    align-items: center;
+    line-height: 1;
+    text-decoration: none;
+    transition:
+      outline 0.1s ease-out,
+      filter 0.1s ease-out,
+      transform 0.1s ease-out,
+      background-color 0.1s ease-out;
+    display: inline-flex;
+  }
 }
 
-.button:disabled {
-  opacity: 0.3;
-  cursor: default;
-}
+/* ------------------------------------------------------------------ */
+/* Button states                                                       */
+/* ------------------------------------------------------------------ */
 
-/* --- Variants --- */
+@layer buttons.state {
+  :where(.button):hover {
+    background: var(--surface-hover);
+  }
 
-.button--primary {
-  font-weight: 600;
-}
+  :where(.button):active {
+    filter: brightness(0.95);
+    transform: translateY(1px);
+  }
 
-.button[data-size="small"] {
-  font-size: 0.75rem;
-  padding: 0.2rem 0.35rem;
-  border-radius: 3px;
+  :where(.button):focus-visible {
+    outline-color: var(--button-focus-ring-color);
+  }
+
+  :where(.button):disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
 }

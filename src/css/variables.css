@@ -67,8 +67,9 @@
   --text-low: var(--neutral-350);
 
   /* Surfaces */
-  --surface-default: var(--neutral-0);
-  --surface-raised: var(--neutral-50);
+  --surface-sunken: var(--neutral-0);
+  --surface-default: var(--neutral-50);
+  --surface-raised: var(--neutral-100);
   --surface-hover: var(--neutral-150);
   --surface-overlay: oklch(0 0 0 / 0.06);
 

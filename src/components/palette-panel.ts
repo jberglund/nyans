@@ -54,7 +54,7 @@ class PalettePanel extends HTMLElement {
             <input
               id="palette-name-${this.#paletteId}"
               type="text"
-              class="palette-name-input"
+              class="input palette-name-input"
               .value=${palette.name}
               placeholder="Palette name"
               aria-label="Palette name"
@@ -82,7 +82,7 @@ class PalettePanel extends HTMLElement {
               </button>
             </div>
           </div>
-          <div class="the-grid__steps">
+          <div class="the-grid__steps stack gap-m">
             <div class="palette-grid" data-palette-grid>
               ${swatches.map(
                 (swatch) => html`

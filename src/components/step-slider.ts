@@ -27,7 +27,7 @@ class StepSlider extends HTMLElement {
     const showLabel = this.hasAttribute("show-label");
     const ceiling = this.getAttribute("ceiling");
 
-    // Light DOM — inherits global CSS from form-controls.css
+    // Light DOM — inherits global CSS from inputs.css and form-controls.css
     render(
       html`
         <label class="step-item">
@@ -36,6 +36,7 @@ class StepSlider extends HTMLElement {
             <div class="ceiling-zone"></div>
             <input
               id="step-range-${stepKey}"
+              class="range-input"
               type="range"
               min="${min}"
               max="${max}"
@@ -47,7 +48,7 @@ class StepSlider extends HTMLElement {
           </div>
           <input
             id="step-number-${stepKey}"
-            class="step-number"
+            class="input step-number"
             type="number"
             min="${min}"
             max="${max}"

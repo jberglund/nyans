@@ -11,7 +11,7 @@
 
 /* Plot background rectangle */
 .bezier-editor__plot-bg {
-  fill: transparent;
+  fill: var(--surface-sunken);
   stroke: var(--text-low);
   stroke-width: 0.5;
 }
@@ -45,7 +45,7 @@
 
 /* Vertical step grid + horizontal reference lines */
 .bezier-editor__grid-line {
-  stroke: var(--border-default);
+  stroke: var(--text-low);
   stroke-width: 0.5;
   stroke-dasharray: 2 2;
 }

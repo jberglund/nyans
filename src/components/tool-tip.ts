@@ -79,7 +79,7 @@ class ToolTip extends HTMLElement {
 
         <button
           id="tt-trigger"
-          class="trigger"
+          class="button trigger"
           popovertarget="tip"
           popovertargetaction="toggle"
           aria-label="More info"

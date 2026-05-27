@@ -64,12 +64,11 @@ class PaletteOrigin extends HTMLElement {
           id="origin-${this.#paletteId}"
           name="origin"
           @input=${this.#onColorInput}
-          hidden
         />
         <input
           id="origin-text-${this.#paletteId}"
           type="text"
-          class="origin-text border-default"
+          class="input origin-text border-default"
           .value=${hex}
           placeholder="#000000"
           aria-label="Origin color value"

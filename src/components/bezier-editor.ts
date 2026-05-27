@@ -4,13 +4,7 @@ import { STEPS } from "../state/types";
 import type { State, Curve } from "../state/types";
 import { type BezierControls, bezierYAtX, bezierToCurve, BEZIER_PRESETS } from "../state/bezier";
 import { snap } from "../state/derive";
-import {
-  lightnessHeadingTip,
-  presetTip,
-  bezierEditorTip,
-  startLightnessTip,
-  endLightnessTip,
-} from "./tool-tip-content";
+import { presetTip, startLightnessTip, endLightnessTip } from "./tool-tip-content";
 import "./number-slider";
 
 // ---------------------------------------------------------------------------
@@ -188,18 +182,15 @@ class BezierEditor extends HTMLElement {
       html`
         <section class="the-grid">
           <div class="the-grid__configuration">
-            <div class="stack gap-s">
-              <h3 class="gap-2xs">
-                Lightness<tool-tip class="ml-xs">${lightnessHeadingTip}</tool-tip>
-              </h3>
-
+            <h4 class="mb-l">Config</h4>
+            <div class="stack gap-l pt-xl">
               <div class="stack">
                 <div class="stack-horizontal">
-                  <label class="fs-s" for="preset">Preset</label>
+                  <label class="fs-xs t-bold" for="preset">Curve presets</label>
                   <tool-tip class="ml-2xs">${presetTip}</tool-tip>
                 </div>
                 <div class="stack-horizontal gap-xs">
-                  <select id="preset" @change=${this.#onPresetChange} class="flex-1">
+                  <select id="preset" @change=${this.#onPresetChange} class="select flex-1">
                     <option value="" ?selected=${activeKey === null}>Custom…</option>
                     ${BEZIER_PRESETS.map(
                       (p) => html`
@@ -213,19 +204,15 @@ class BezierEditor extends HTMLElement {
                 </div>
               </div>
 
-              <div>
-                <span>Curve<tool-tip>${bezierEditorTip}</tool-tip></span>
-              </div>
-
               <div class="stack gap-2xs">
                 <div class="stack-horizontal items-center">
-                  <span class="fs-s">Start</span>
+                  <span class="fs-xs t-bold">Start</span>
                   <tool-tip class="ml-2xs">${startLightnessTip}</tool-tip>
                   <number-slider class="ml-auto">
                     <input
                       id="start-lightness"
-                      class="origin-text border-default t-right"
-                      style="width:9ch"
+                      class="input origin-text border-default t-right"
+                      style="width:12ch"
                       type="number"
                       min="0"
                       max="1"
@@ -236,13 +223,13 @@ class BezierEditor extends HTMLElement {
                   </number-slider>
                 </div>
                 <div class="stack-horizontal items-center">
-                  <span class="fs-s">End</span>
+                  <span class="fs-xs t-bold">End</span>
                   <tool-tip class="ml-2xs">${endLightnessTip}</tool-tip>
                   <number-slider class="ml-auto">
                     <input
                       id="end-lightness"
-                      class="origin-text border-default t-right"
-                      style="width:9ch"
+                      class="input origin-text border-default t-right"
+                      style="width:12ch"
                       type="number"
                       min="0"
                       max="1"
@@ -256,7 +243,10 @@ class BezierEditor extends HTMLElement {
             </div>
           </div>
 
-          <div class="the-grid__steps">${this.#renderSvg()}</div>
+          <div class="the-grid__steps">
+            <h4 class="mb-l">Lightness Curve</h4>
+            <div>${this.#renderSvg()}</div>
+          </div>
         </section>
       `,
       this,

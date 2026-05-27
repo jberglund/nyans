@@ -30,6 +30,8 @@ export class Store {
   #state: State;
   #listeners = new Set<Listener>();
   #dirty = false;
+  /** Baseline curve snapshot used to keep propagation idempotent within a frame. */
+  #propagationBase: Curve | null = null;
 
   constructor(state: State) {
     this.#state = structuredClone(state);
@@ -158,17 +160,30 @@ export class Store {
 
   // --- internal ---
 
-  /** Apply a delta to every step, weighted by distance from the changed step. */
+  /**
+   * Apply a delta to every step, weighted by distance from the changed step.
+   *
+   * Snaps a baseline copy of the curve on the first call in a frame and
+   * computes all deltas from that snapshot. This keeps rapid slider drags
+   * (many small deltas) from producing a different result than a single slow
+   * drag, which would otherwise happen because intermediate snap() rounding
+   * is non-linear.
+   */
   #propagate(curve: Curve, step: Step, newValue: number, max: number): void {
-    const delta = newValue - curve[step];
+    if (!this.#propagationBase) {
+      this.#propagationBase = { ...curve };
+    }
+    const base = this.#propagationBase;
+
+    const delta = newValue - base[step];
     const changedIndex = STEPS.indexOf(step);
     const decay = this.#state.settings.propagateDecay;
 
     for (let i = 0; i < STEPS.length; i++) {
       const s = STEPS[i];
       const distance = Math.abs(i - changedIndex);
-      const weight = Math.pow(decay, distance);
-      const val = curve[s] + delta * weight;
+      const weight = Math.pow(decay, Math.sqrt(distance));
+      const val = base[s] + delta * weight;
       curve[s] = snap(Math.max(0, Math.min(max, val)));
     }
   }
@@ -184,6 +199,7 @@ export class Store {
   }
 
   #notify(): void {
+    this.#propagationBase = null;
     for (const fn of this.#listeners) {
       fn(this.#state);
     }

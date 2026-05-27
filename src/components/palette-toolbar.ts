@@ -41,13 +41,12 @@ class PaletteToolbar extends HTMLElement {
 
         <div id="advanced-popover" class="advanced-popover" popover="auto">
           <div class="stack gap-s p-m">
-            <label
-              class="toolbar-setting inline-flex items-center gap-m fs-s surface-raised border-default"
-            >
+            <label class="p-2xs inline-flex items-center gap-xs fs-s surface-raised border-default">
               <span>Max chroma<tool-tip>${maxChromaTip}</tool-tip></span>
               <number-slider>
                 <input
                   id="max-chroma"
+                  class="input"
                   type="number"
                   min="0.2"
                   max="0.4"
@@ -58,9 +57,7 @@ class PaletteToolbar extends HTMLElement {
               </number-slider>
             </label>
 
-            <label
-              class="toolbar-setting inline-flex items-center gap-m fs-s surface-raised border-default"
-            >
+            <label class="p-2xs inline-flex items-center gap-xs fs-s surface-raised border-default">
               <span>Target colorspace<tool-tip>${ceilingTip}</tool-tip></span>
               <select .value=${settings.ceilingGamut} @change=${this.#onCeilingChange}>
                 ${CEILING_OPTIONS.map(
