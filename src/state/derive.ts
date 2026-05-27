@@ -90,6 +90,29 @@ export function snap(n: number): number {
 }
 
 // ---------------------------------------------------------------------------
+// Memoization
+// ---------------------------------------------------------------------------
+
+/**
+ * Wrap a pure function with a Map-based cache, keyed by its stringified
+ * arguments. Capped to prevent unbounded growth over long sessions.
+ */
+function memoize<A extends unknown[], R>(fn: (...args: A) => R, max = 600): (...args: A) => R {
+  const cache = new Map<string, R>();
+  return (...args: A): R => {
+    const key = args.join(",");
+    const cached = cache.get(key);
+    if (cached !== undefined) return cached;
+
+    if (cache.size >= max) cache.clear();
+
+    const result = fn(...args);
+    cache.set(key, result);
+    return result;
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Gamut helpers
 // ---------------------------------------------------------------------------
 
@@ -98,7 +121,7 @@ export function snap(n: number): number {
  * Returns the narrowest gamut that contains the color.
  * Pure function — no side effects.
  */
-export function classifyGamut(l: number, c: number, h: number): GamutLabel {
+function _classifyGamut(l: number, c: number, h: number): GamutLabel {
   const color = new Color("oklch", [l, c, h]);
   for (const gamut of GAMUTS) {
     try {
@@ -119,7 +142,7 @@ export function classifyGamut(l: number, c: number, h: number): GamutLabel {
  * Uses the same `inGamut()` check as `classifyGamut` so the ceiling line
  * and the gamut badge are always consistent.
  */
-export function maxInGamutChroma(l: number, h: number, gamut: string): number {
+function _maxInGamutChroma(l: number, h: number, gamut: string): number {
   let lo = 0;
   let hi = 0.6; // practical upper bound for OKLCH chroma
 
@@ -148,3 +171,8 @@ export function maxInGamutChroma(l: number, h: number, gamut: string): number {
 
   return snap(lo);
 }
+
+// Memoized exports — all inputs are snapped to 3 decimal places, so during a
+// slider drag on one step, 19 of 20 calls hit the cache.
+export const classifyGamut = memoize(_classifyGamut);
+export const maxInGamutChroma = memoize(_maxInGamutChroma);

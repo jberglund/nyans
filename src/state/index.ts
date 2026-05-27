@@ -6,6 +6,7 @@ export {
   type PaletteConfig,
   type State,
   type AppSettings,
+  DEFAULT_SETTINGS,
 } from "./types";
 export { Store, store, type Listener } from "./store";
 export {

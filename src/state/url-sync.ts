@@ -1,4 +1,11 @@
-import { type State, type AppSettings, STEPS, type Curve, type PaletteConfig } from "./types";
+import {
+  type State,
+  type AppSettings,
+  STEPS,
+  type Curve,
+  type PaletteConfig,
+  DEFAULT_SETTINGS,
+} from "./types";
 import { store, type Store } from "./store";
 import { snap } from "./derive";
 
@@ -33,7 +40,10 @@ export function parseHashParams(): State | null {
     const originRaw = params.get(`${key}-origin`);
     const origin = originRaw ? parseOrigin(originRaw) : { l: 0.5, c: 0.15, h: 264 };
 
-    palettes[key] = { chroma, origin };
+    const nameRaw = params.get(`${key}-name`);
+    const name = nameRaw ? decodeURIComponent(nameRaw) : key;
+
+    palettes[key] = { chroma, origin, name };
   }
 
   // Require at least one palette
@@ -56,14 +66,15 @@ export function syncToUrl(state: State): void {
     parts.push(
       `${id}-origin=${enc(palette.origin.l)},${enc(palette.origin.c)},${enc(palette.origin.h)}`,
     );
+    parts.push(`${id}-name=${encodeURIComponent(palette.name)}`);
   }
 
-  // Settings
-  parts.push(`max-chroma=${state.settings.maxChroma}`);
-  parts.push(`ceiling=${state.settings.ceilingGamut}`);
-  if (state.settings.propagateChanges) {
-    parts.push(`propagate=1`);
-    parts.push(`propagate-decay=${state.settings.propagateDecay}`);
+  // Settings — only write non-default values to keep URLs clean
+  if (state.settings.maxChroma !== DEFAULT_SETTINGS.maxChroma) {
+    parts.push(`max-chroma=${state.settings.maxChroma}`);
+  }
+  if (state.settings.ceilingGamut !== DEFAULT_SETTINGS.ceilingGamut) {
+    parts.push(`ceiling=${state.settings.ceilingGamut}`);
   }
 
   const qs = parts.join("&");
@@ -73,6 +84,9 @@ export function syncToUrl(state: State): void {
 /**
  * Wire up the store so every change automatically syncs to the URL.
  * Returns an unsubscribe function.
+ *
+ * Syncs are debounced at 400 ms to avoid hammering history.replaceState
+ * on every slider drag — which causes significant jank in Chrome.
  */
 export function initUrlSync(s: Store = store): () => void {
   // Hydrate from URL on first load — URL wins over defaults
@@ -84,7 +98,15 @@ export function initUrlSync(s: Store = store): () => void {
     syncToUrl(s.getState());
   }
 
-  return s.subscribe((state) => syncToUrl(state));
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  return s.subscribe((state) => {
+    if (timer !== null) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = null;
+      syncToUrl(state);
+    }, 400);
+  });
 }
 
 // --- helpers ---
@@ -125,14 +147,14 @@ function parseOrigin(raw: string): { l: number; c: number; h: number } {
 function parseSettings(params: URLSearchParams): AppSettings {
   const maxChromaRaw = params.get("max-chroma");
   const ceilingRaw = params.get("ceiling");
-  const propagateRaw = params.get("propagate");
-  const propagateDecayRaw = params.get("propagate-decay");
   return {
-    maxChroma: maxChromaRaw ? parseFloat(maxChromaRaw) : 0.35,
+    maxChroma: maxChromaRaw ? parseFloat(maxChromaRaw) : DEFAULT_SETTINGS.maxChroma,
     ceilingGamut:
-      ceilingRaw === "srgb" || ceilingRaw === "p3" || ceilingRaw === "rec2020" ? ceilingRaw : "p3",
-    propagateChanges: propagateRaw === "1",
-    propagateDecay: propagateDecayRaw ? parseFloat(propagateDecayRaw) : 0.5,
+      ceilingRaw === "srgb" || ceilingRaw === "p3" || ceilingRaw === "rec2020"
+        ? ceilingRaw
+        : DEFAULT_SETTINGS.ceilingGamut,
+    propagateChanges: DEFAULT_SETTINGS.propagateChanges,
+    propagateDecay: DEFAULT_SETTINGS.propagateDecay,
   };
 }
 

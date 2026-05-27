@@ -62,8 +62,8 @@
   /* ------------------------------------------------------------------ */
 
   /* Text */
-  --text-high: var(--neutral-900);
-  --text-mid: var(--neutral-550);
+  --text-high: var(--neutral-800);
+  --text-mid: var(--neutral-650);
   --text-low: var(--neutral-350);
 
   /* Surfaces */
@@ -73,7 +73,7 @@
   --surface-overlay: oklch(0 0 0 / 0.06);
 
   /* Borders */
-  --border-default: var(--neutral-300);
+  --border-default: var(--neutral-150);
 
   /* Accent */
   --accent: #2563eb;
@@ -86,5 +86,9 @@
   --scrim: oklch(0 0 0 / 0.3);
 
   /* Gamut warning */
-  --gamut-warning: oklch(0.59 0.02 0.88 / 0.26);
+  --gamut-warning: repeating-linear-gradient(
+    -35deg,
+    var(--border-default) 0 1px,
+    transparent 0px 4px
+  );
 }

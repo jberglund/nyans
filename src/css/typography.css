@@ -63,41 +63,42 @@
   }
 }
 
-.typeset {
+:where(.typeset) {
   max-width: 65ch;
   line-height: 1.7;
+  font-weight: var(--font-weight-regular);
 }
 
 /* Vertical rhythm — auto-space all block siblings */
-.typeset > * + * {
+:where(.typeset) > * + * {
   margin-block-start: 0.75em;
 }
 
 /* Headings need more breathing room above */
-.typeset :is(h2, h3, h4) {
+:where(.typeset) :is(h2, h3, h4) {
   margin-block-start: 2em;
 }
 
 /* Except right after h1 — tighter coupling */
-.typeset h1 + :is(h2, h3, h4) {
+:where(.typeset) h1 + :is(h2, h3, h4) {
   margin-block-start: 1em;
 }
 
 /* Definition lists — term/description pairs */
-.typeset dl {
+:where(.typeset) dl {
   display: grid;
   grid-template-columns: max-content 1fr;
   gap: var(--spacing-s) var(--spacing-xl);
   align-items: baseline;
 }
 
-.typeset dt {
+:where(.typeset) dt {
   grid-column: 1;
   opacity: 0.6;
   white-space: nowrap;
 }
 
-.typeset dd {
+:where(.typeset) dd {
   grid-column: 2;
   margin: 0;
 }

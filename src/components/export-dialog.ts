@@ -21,9 +21,10 @@ class ExportDialog extends HTMLElement {
   connectedCallback() {
     // Seed with all current palette IDs on first connect
     if (!this.#initialized) {
-      const ids = Object.keys(store.getState().palettes);
+      const state = store.getState();
+      const ids = Object.keys(state.palettes);
       this.#paletteIds = ids;
-      for (const id of ids) this.#names[id] = id;
+      for (const id of ids) this.#names[id] = state.palettes[id].name;
       this.#initialized = true;
     }
     this.#render();
@@ -38,11 +39,12 @@ class ExportDialog extends HTMLElement {
 
   open() {
     // Ensure any newly added palettes are selected by default
-    const currentIds = Object.keys(store.getState().palettes);
+    const state = store.getState();
+    const currentIds = Object.keys(state.palettes);
     for (const id of currentIds) {
       if (!this.#paletteIds.includes(id)) {
         this.#paletteIds = [...this.#paletteIds, id];
-        this.#names[id] = id;
+        this.#names[id] = state.palettes[id].name;
       }
     }
     // Remove stale IDs from selection and names
@@ -98,6 +100,7 @@ class ExportDialog extends HTMLElement {
               <label class="stack gap-3xs flex-1">
                 <span class="export-dialog__label">Name prefix</span>
                 <input
+                  id="export-prefix"
                   type="text"
                   .value=${live(this.#prefix)}
                   @input=${this.#onPrefixInput}
@@ -114,11 +117,13 @@ class ExportDialog extends HTMLElement {
                   (id) => html`
                     <label class="stack-horizontal gap-2xs export-dialog__checkbox">
                       <input
+                        id="export-palette-${id}"
                         type="checkbox"
                         .checked=${this.#paletteIds.includes(id)}
                         @change=${(e: Event) => this.#onPaletteToggle(id, e)}
                       />
                       <input
+                        id="export-name-${id}"
                         type="text"
                         .value=${live(this.#names[id] ?? id)}
                         @input=${(e: Event) => this.#onNameInput(id, e)}

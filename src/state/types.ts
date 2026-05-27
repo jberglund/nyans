@@ -34,10 +34,11 @@ export interface Origin {
   h: number;
 }
 
-/** Per-palette configuration — chroma curve + source color origin. */
+/** Per-palette configuration — chroma curve + source color origin + display name. */
 export interface PaletteConfig {
   chroma: Curve;
   origin: Origin;
+  name: string;
 }
 
 /** Global app settings that affect all palettes. */
@@ -51,6 +52,14 @@ export interface AppSettings {
   /** Decay factor for change propagation (0–1). Higher = broader spread. */
   propagateDecay: number;
 }
+
+/** Default app settings — single source of truth for initial values. */
+export const DEFAULT_SETTINGS: AppSettings = {
+  maxChroma: 0.35,
+  ceilingGamut: "p3",
+  propagateChanges: false,
+  propagateDecay: 0.5,
+};
 
 /** The full application state. */
 export interface State {

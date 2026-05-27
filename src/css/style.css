@@ -8,6 +8,7 @@
 @import "./misc.css";
 @import "./defaults.css";
 @import "./typography.css";
+@import "./bezier-editor.css";
 
 *,
 *::before,
@@ -32,12 +33,16 @@
     "Open Sans",
     "Helvetica Neue",
     sans-serif;
+
+  color: var(--text-mid);
 }
 
 #app {
   display: grid;
-  gap: 2rem;
+  gap: 6rem;
   padding: 1rem;
+  max-width: 1200px;
+  margin-inline: auto;
 }
 
 #palettes {
@@ -68,11 +73,19 @@ palette-panel {
   display: grid;
   grid-auto-columns: minmax(max-content, 1fr);
   grid-auto-flow: column;
+
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  overflow: clip;
 }
 
+step-slider {
+  border-right: 1px solid var(--border-default);
+}
 .step-item {
   height: 100%;
-  min-height: 10rem;
+  min-height: 12rem;
+  max-height: 12rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -111,18 +124,6 @@ palette-panel {
   height: 8rem;
 }
 
-gamut-checker {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background-color: transparent;
-}
-
-gamut-checker[color-gamut="rec2020"],
-gamut-checker[color-gamut="rec2020+"] {
-  background: repeating-linear-gradient(-61deg, var(--gamut-warning) 0 1px, transparent 0px 4px);
-}
-
 /* ------------------------------------------------------------------ */
 /* Toolbar                                                            */
 /* ------------------------------------------------------------------ */
@@ -140,10 +141,8 @@ gamut-checker[color-gamut="rec2020+"] {
 .toolbar-setting {
   display: flex;
   align-items: center;
-  gap: var(--spacing-m);
-  font-size: 0.75rem;
   background: var(--surface-raised);
-  padding: 2px 2px 2px 8px;
+
   border: 1px solid var(--border-default);
   border-radius: 8px;
 }
@@ -160,6 +159,18 @@ gamut-checker[color-gamut="rec2020+"] {
 .palette-actions {
   gap: 0.25rem;
   margin-top: 0.4rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Advanced popover                                                   */
+/* ------------------------------------------------------------------ */
+
+.advanced-popover {
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-dialog);
+  margin: 0;
 }
 
 /* ------------------------------------------------------------------ */

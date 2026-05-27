@@ -1,8 +1,7 @@
 import { html, render } from "lit-html";
 import { store } from "../state/store";
-import { STEPS, deriveSwatches, classifyGamut, maxInGamutChroma, type Step } from "../state";
+import { STEPS, deriveSwatches, maxInGamutChroma, type Step } from "../state";
 import type { State, PaletteConfig } from "../state/types";
-import "./gamut-checker";
 import "./step-slider";
 import "./palette-origin";
 
@@ -52,6 +51,15 @@ class PalettePanel extends HTMLElement {
       html`
         <section class="the-grid">
           <div class="the-grid__configuration palette-origin">
+            <input
+              id="palette-name-${this.#paletteId}"
+              type="text"
+              class="palette-name-input"
+              .value=${palette.name}
+              placeholder="Palette name"
+              aria-label="Palette name"
+              @change=${this.#onNameChange}
+            />
             <palette-origin
               palette-id="${this.#paletteId}"
               l="${palette.origin.l}"
@@ -76,19 +84,13 @@ class PalettePanel extends HTMLElement {
           </div>
           <div class="the-grid__steps">
             <div class="palette-grid" data-palette-grid>
-              ${swatches.map((swatch) => {
-                const gamut = classifyGamut(swatch.l, swatch.c, swatch.h);
-                return html`
+              ${swatches.map(
+                (swatch) => html`
                   <div class="palette-swatch" style="background-color: ${swatch.css}">
                     <span hidden class="swatch-label">${swatch.step}</span>
-                    <gamut-checker
-                      color-gamut="${gamut}"
-                      target-strategy="closest"
-                      target=".palette-swatch"
-                    ></gamut-checker>
                   </div>
-                `;
-              })}
+                `,
+              )}
             </div>
             <div class="palette-grid" data-editor="chroma">
               ${STEPS.map((step) => {
@@ -135,6 +137,11 @@ class PalettePanel extends HTMLElement {
     store.setOrigin(this.#paletteId, l, c, h);
   };
 
+  #onNameChange = (e: Event) => {
+    const value = (e.target as HTMLInputElement).value;
+    store.setPaletteName(this.#paletteId, value);
+  };
+
   #onCloneClick = () => {
     const state = store.getState();
     const palette = state.palettes[this.#paletteId];
@@ -142,10 +149,8 @@ class PalettePanel extends HTMLElement {
 
     const cloneConfig: PaletteConfig = {
       chroma: { ...palette.chroma },
-      origin: {
-        ...palette.origin,
-        h: (palette.origin.h + 30) % 360,
-      },
+      origin: { ...palette.origin },
+      name: `${palette.name} (copy)`,
     };
 
     this.dispatchEvent(

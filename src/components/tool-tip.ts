@@ -57,7 +57,9 @@ class ToolTip extends HTMLElement {
             border-radius: 6px;
             padding: 0.5rem 0.75rem;
             max-width: 280px;
+            width: 100%;
             font-size: 0.8rem;
+            font-weight: var(--font-weight-regular);
             line-height: 1.5;
             color: var(--text-high);
             background: var(--surface-default);
@@ -66,7 +68,7 @@ class ToolTip extends HTMLElement {
             /* anchor positioning — progressive enhancement */
             top: anchor(bottom);
             left: anchor(center);
-            translate: -50% 0;
+            position-area: right bottom;
             position-try-options: flip-block;
           }
 

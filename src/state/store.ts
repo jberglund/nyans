@@ -6,11 +6,25 @@ import {
   type PaletteConfig,
   type Origin,
   type AppSettings,
+  DEFAULT_SETTINGS,
 } from "./types";
 import { deriveChromaCurve, snap } from "./derive";
-import { BEZIER_PRESETS, bezierToCurve, DEFAULT_START_L, DEFAULT_END_L } from "./bezier";
+import { BEZIER_PRESETS, bezierToCurve } from "./bezier";
+import { nextPaletteId } from "./palette-utils";
 
 export type Listener = (state: State) => void;
+
+/** Starter palettes and the template for user-added palettes. */
+const DEFAULT_PALETTES = [
+  { id: "primary", origin: { l: 0.62, c: 0.18, h: 264 }, name: "Primary" },
+  { id: "neutral", origin: { l: 0.82, c: 0.018, h: 264 }, name: "Neutral" },
+  { id: "accent", origin: { l: 0.417, c: 0.136, h: 25 }, name: "Accent" },
+] as const;
+
+/** Build a PaletteConfig from an origin — keeps chroma curve and origin in sync. */
+function makePalette(origin: Origin, name: string, lightness: Curve): PaletteConfig {
+  return { chroma: deriveChromaCurve(origin, lightness), origin, name };
+}
 
 export class Store {
   #state: State;
@@ -56,7 +70,11 @@ export class Store {
 
   /** Replace the entire lightness curve (reset / preset). */
   setLightnessCurve(curve: Curve): void {
-    this.#state.lightness = { ...curve };
+    const snapped = {} as Curve;
+    for (const step of STEPS) {
+      snapped[step] = snap(curve[step]);
+    }
+    this.#state.lightness = snapped;
     this.#notify();
   }
 
@@ -81,8 +99,22 @@ export class Store {
     this.#scheduleNotify();
   }
 
+  setPaletteName(paletteId: string, name: string): void {
+    if (!this.#state.palettes[paletteId]) return;
+    this.#state.palettes[paletteId].name = name.trim() || paletteId;
+    this.#scheduleNotify();
+  }
+
   addPalette(id: string, config: PaletteConfig): void {
     this.#state.palettes[id] = config;
+    this.#notify();
+  }
+
+  /** Create a new palette from the first default template and add it to state. */
+  addDefaultPalette(): void {
+    const tmpl = DEFAULT_PALETTES[0];
+    const id = nextPaletteId(this.#state);
+    this.#state.palettes[id] = makePalette(tmpl.origin, id, this.#state.lightness);
     this.#notify();
   }
 
@@ -169,25 +201,14 @@ export class Store {
 
   // --- factory ---
 
-  /** Create a store with sensible defaults and one palette. */
+  /** Create a store with the default palettes. */
   static default(): Store {
-    const origin = { l: 0.62, c: 0.18, h: 264 };
-    const lightness = bezierToCurve(BEZIER_PRESETS[0].controls, DEFAULT_START_L, DEFAULT_END_L);
-    return new Store({
-      lightness,
-      palettes: {
-        p1: {
-          chroma: deriveChromaCurve(origin, lightness),
-          origin,
-        },
-      },
-      settings: {
-        maxChroma: 0.35,
-        ceilingGamut: "p3",
-        propagateChanges: false,
-        propagateDecay: 0.5,
-      },
-    });
+    const lightness = bezierToCurve(BEZIER_PRESETS[0].controls);
+    const palettes: Record<string, PaletteConfig> = {};
+    for (const p of DEFAULT_PALETTES) {
+      palettes[p.id] = makePalette(p.origin, p.name, lightness);
+    }
+    return new Store({ lightness, palettes, settings: { ...DEFAULT_SETTINGS } });
   }
 }
 

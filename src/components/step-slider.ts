@@ -32,17 +32,21 @@ class StepSlider extends HTMLElement {
       html`
         <label class="step-item">
           <span class="fs-xs mb-xs" ?hidden=${!showLabel}>${stepKey}</span>
+          <div class="slider-track">
+            <div class="ceiling-zone"></div>
+            <input
+              id="step-range-${stepKey}"
+              type="range"
+              min="${min}"
+              max="${max}"
+              .value=${live(value)}
+              step="0.001"
+              orient="${orient}"
+              @input=${this.#onRangeInput}
+            />
+          </div>
           <input
-            class=" flex-1"
-            type="range"
-            min="${min}"
-            max="${max}"
-            .value=${live(value)}
-            step="0.001"
-            orient="${orient}"
-            @input=${this.#onRangeInput}
-          />
-          <input
+            id="step-number-${stepKey}"
             class="step-number"
             type="number"
             min="${min}"
@@ -67,6 +71,7 @@ class StepSlider extends HTMLElement {
       const number = this.querySelector<HTMLInputElement>("input[type='number']");
       if (range && document.activeElement !== range) range.value = newValue;
       if (number && document.activeElement !== number) number.value = newValue;
+      this.#updateTrackBg();
     }
     if (name === "min" || name === "max") {
       const range = this.querySelector<HTMLInputElement>("input[type='range']");
@@ -91,10 +96,21 @@ class StepSlider extends HTMLElement {
   }
 
   #setCeilingPos(ceiling: number, max: number) {
+    const pos = max > 0 ? (ceiling / max) * 100 : 100;
+    this.style.setProperty("--ceiling-pos", `${pos}`);
+    this.#updateTrackBg();
+  }
+
+  #updateTrackBg() {
     const range = this.querySelector<HTMLInputElement>("input[type='range']");
     if (!range) return;
-    const pos = max > 0 ? (ceiling / max) * 100 : 100;
-    range.style.setProperty("--ceiling-pos", `${pos}%`);
+    const value = parseFloat(range.value);
+    const ceiling = parseFloat(this.getAttribute("ceiling") ?? "0");
+    if (value > ceiling) {
+      this.setAttribute("out-of-gamut", "");
+    } else {
+      this.removeAttribute("out-of-gamut");
+    }
   }
 
   #rangeEl() {
@@ -110,6 +126,7 @@ class StepSlider extends HTMLElement {
     if (number && document.activeElement !== number) {
       number.value = range.value;
     }
+    this.#updateTrackBg();
     this.#emitChange(parseFloat(range.value));
   };
 
@@ -119,6 +136,7 @@ class StepSlider extends HTMLElement {
     if (range && document.activeElement !== range) {
       range.value = number.value;
     }
+    this.#updateTrackBg();
     this.#emitChange(parseFloat(number.value));
   };
 

@@ -67,6 +67,7 @@ class PaletteOrigin extends HTMLElement {
           hidden
         />
         <input
+          id="origin-text-${this.#paletteId}"
           type="text"
           class="origin-text border-default"
           .value=${hex}

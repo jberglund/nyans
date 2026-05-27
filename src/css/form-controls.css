@@ -4,7 +4,7 @@ select {
   color: var(--text-high);
   font-size: 0.75rem;
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  font-weigth: var(--font-weight-medium);
+  font-weight: var(--font-weight-medium);
 }
 
 input:where([type="text"], [type="number"]) {
@@ -29,44 +29,43 @@ input[type="range"][orient="vertical"] {
 
 input[type="range"] {
   --wrapper-height: 30px; /* total clickable area height */
-  --thumb-size: 20px;
-  --thumb-width: 30px;
-  --thumb-height: 2px;
-  --thumb-color: currentColor;
+  --thumb-width: 22px;
+  --thumb-height: 4px;
+  --thumb-color: var(--neutral-450);
+  --thumb-border: 1px solid var(--neutral-600);
   --thumb-opacity: 0.5;
   --thumb-radius: 4px;
-  --track-bg: var(--surface-raised);
 }
 
 input[type="range"]:hover {
-  --track-bg: var(--surface-raised);
+  /* kept for potential overrides */
 }
 
 input[type="range"]:focus {
   outline: none;
 }
 
-/* ===== Input fills the wrapper ===== */
+/* ===== Range input is transparent — overlays handle visuals ===== */
 input[type="range"] {
-  --ceiling-bg: transparent;
-
+  position: relative;
+  z-index: 3;
   height: var(--wrapper-height);
-
-  --ceiling-pos: 100%; /* default: no danger zone */
-
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  background: linear-gradient(
-    to top,
-    var(--track-bg) 0%,
-    var(--track-bg) var(--ceiling-pos),
-    var(--ceiling-bg) var(--ceiling-pos),
-    var(--ceiling-bg) 100%
-  );
+  background: transparent;
   margin: 0;
   cursor: pointer;
-  font: inherit; /* prevents squishing in some browsers */
+  font: inherit;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+input[type="range"]::-moz-range-track {
+  height: 100%;
+  background: transparent;
 }
 
 input[type="range"]::-webkit-slider-thumb {
@@ -77,20 +76,11 @@ input[type="range"]::-webkit-slider-thumb {
   border-radius: var(--thumb-radius);
   background: var(--thumb-color);
   opacity: var(--thumb-opacity);
-  border: none;
+  border: var(--thumb-border);
   transition:
     transform 0.15s ease,
     filter 0.15s ease,
     opacity 0.15s ease;
-}
-
-input[type="range"]:hover::-webkit-slider-thumb {
-  transform: scaleY(2);
-}
-
-input[type="range"]:active::-webkit-slider-thumb {
-  transform: scaleY(1.8);
-  filter: brightness(0.85);
 }
 
 /* Firefox */
@@ -100,39 +90,62 @@ input[type="range"]::-moz-range-thumb {
   border-radius: var(--thumb-radius);
   background: var(--thumb-color);
   opacity: var(--thumb-opacity);
-  border: none;
+  border: var(--thumb-border);
   transition:
     transform 0.15s ease,
     filter 0.15s ease,
     opacity 0.15s ease;
 }
 
-input[type="range"]:hover::-moz-range-thumb {
-  transform: scaleY(1.4);
+/* ------------------------------------------------------------------ */
+/* Slider track overlay (behind the transparent range input)          */
+/* ------------------------------------------------------------------ */
+
+step-slider {
+  --ceiling-pos: 100; /* unitless 0–100, default: no danger zone */
 }
 
-input[type="range"]:active::-moz-range-thumb {
-  transform: scaleY(1.8);
-  filter: brightness(0.85);
+.slider-track {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  background: var(--surface-raised);
+  overflow: hidden;
 }
 
-/* Firefox: make track fill the input and stay invisible */
-input[type="range"]::-moz-range-track {
+.ceiling-zone {
+  position: absolute;
+  inset: 0;
+  background: var(--surface-default);
+  border-bottom: 1px solid var(--border-default);
+  transform: translateY(calc(var(--ceiling-pos) * -1%));
+  pointer-events: none;
+}
+
+step-slider[out-of-gamut] .ceiling-zone {
+  background: var(--gamut-warning);
+}
+
+/* Range input fills the track wrapper, transparent so overlays show through */
+.slider-track input[type="range"] {
+  position: relative;
+  z-index: 3;
   height: 100%;
-  background: linear-gradient(
-    to top,
-    var(--track-bg) 0%,
-    var(--track-bg) var(--ceiling-pos),
-    var(--ceiling-bg) var(--ceiling-pos),
-    var(--ceiling-bg) 100%
-  );
 }
+
+/* ------------------------------------------------------------------ */
+/* Number input                                                       */
+/* ------------------------------------------------------------------ */
 
 .step-number {
   width: 100%;
+  font-size: 10px;
   text-align: right;
-  border: 1px solid var(--track-bg);
-  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--text-mid);
+  border-top: 1px solid var(--border-default);
+  background: var(--surface-raised);
   padding: 2px 3px;
   -moz-appearance: textfield;
 }

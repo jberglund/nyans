@@ -1,15 +1,17 @@
 import "./css/style.css";
 import "./components/gamut-checker";
 import "./components/step-slider";
-import "./components/lightness-editor";
+import "./components/bezier-editor";
 import "./components/palette-panel";
 import "./components/palette-toolbar";
+import "./components/palettes-header";
+import "./components/palettes-footer";
 import "./components/export-dialog";
 import "./components/tool-tip";
 import { initHotkeys } from "./hotkey";
 import { initUrlSync } from "./state";
 import { store } from "./state/store";
-import { nextPaletteId } from "./components/palette-toolbar";
+import { nextPaletteId } from "./state/palette-utils";
 import type { PaletteConfig } from "./state/types";
 
 // Hydrate from URL (if params exist) and wire up persistence
@@ -27,6 +29,8 @@ initHotkeys();
 
 const container = document.getElementById("palettes");
 if (!container) throw new Error("Missing #palettes container");
+
+let initialSyncDone = false;
 
 syncPalettes(container);
 store.subscribe(() => syncPalettes(container));
@@ -58,11 +62,19 @@ function syncPalettes(parent: HTMLElement) {
   }
 
   // Append new elements (maintain insertion order)
+  const appended: HTMLElement[] = [];
   for (const id of ids) {
     if (!existing.has(id)) {
       const panel = document.createElement("palette-panel");
       panel.setAttribute("palette-id", id);
       parent.appendChild(panel);
+      appended.push(panel);
     }
   }
+
+  // Scroll the most recently added palette into view (skip on initial page load)
+  if (initialSyncDone && appended.length > 0) {
+    appended[appended.length - 1].scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  initialSyncDone = true;
 }
