@@ -1,9 +1,9 @@
 import { html, render } from "lit-html";
 import { live } from "lit-html/directives/live.js";
-import { store } from "../state/store";
-import "./number-slider";
-import { linkedEditingTip, spreadTip } from "./tool-tip-content";
-import type { State } from "../state/types";
+import { store } from "../../state/store";
+import "../shared/number-slider";
+import { linkedEditingTip, spreadTip } from "../shared/tool-tip-content";
+import type { State } from "../../state/types";
 
 /**
  * Header bar above the palette list.
@@ -26,16 +26,15 @@ class PalettesHeader extends HTMLElement {
 
     render(
       html`
-        <div class="toolbar-bar items-center border-bottom-default">
+        <div class="stack-horizontal gap-m items-center mb-2xl">
           <h2>Palettes</h2>
-          <button class="button button--primary" @click=${this.#addPalette}>+ Add palette</button>
+          <button class="button" @click=${this.#addPalette}>
+            <svg class="icon" viewBox="0 0 24 24"><use href="#icon-plus" /></svg>
+            Add palette
+          </button>
 
           <div class="stack-horizontal gap-m ml-auto items-stretch">
-            <label
-              class="p-2xs inline-flex items-center gap-xs fs-s surface-raised border-default"
-              hotkey-key="l"
-              hotkey-restore-focus
-            >
+            <label class=" inline-flex items-center gap-xs" hotkey-key="l" hotkey-restore-focus>
               <input
                 id="linked-editing"
                 class="checkbox"
@@ -43,11 +42,13 @@ class PalettesHeader extends HTMLElement {
                 .checked=${settings.propagateChanges}
                 @change=${this.#onPropagateToggle}
               />
-              <span>Linked editing<tool-tip class="ml-2xs">${linkedEditingTip}</tool-tip></span>
+              <span class="label"
+                >Linked editing<tool-tip class="ml-2xs">${linkedEditingTip}</tool-tip></span
+              >
             </label>
 
-            <label class="p-2xs inline-flex items-center gap-xs fs-s surface-raised border-default">
-              <span>Spread<tool-tip class="ml-2xs">${spreadTip}</tool-tip></span>
+            <label class=" inline-flex items-center gap-xs">
+              <span class="label">Spread<tool-tip class="ml-2xs">${spreadTip}</tool-tip></span>
               <number-slider>
                 <input
                   id="spread-decay"

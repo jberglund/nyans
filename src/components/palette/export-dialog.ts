@@ -1,8 +1,8 @@
 import { html, render } from "lit-html";
 import { live } from "lit-html/directives/live.js";
-import { store } from "../state/store";
-import { generateExport, FORMAT_LABELS, type ExportFormat } from "../export";
-import type { State } from "../state/types";
+import { store } from "../../state/store";
+import { generateExport, FORMAT_LABELS, type ExportFormat } from "../../export";
+import type { State } from "../../state/types";
 
 /**
  * Modal dialog for exporting palettes as CSS, DTCG, or JSON.
@@ -87,7 +87,7 @@ class ExportDialog extends HTMLElement {
             <div class="stack-horizontal gap-m items-end">
               <label class="stack gap-3xs flex-1">
                 <span class="export-dialog__label t-medium fs-xs">Format</span>
-                <select .value=${this.#format} @change=${this.#onFormatChange}>
+                <select class="select" .value=${this.#format} @change=${this.#onFormatChange}>
                   ${Object.entries(FORMAT_LABELS).map(
                     ([value, label]) =>
                       html`<option value="${value}" ?selected=${this.#format === value}>

@@ -50,6 +50,7 @@ class StepSlider extends HTMLElement {
             id="step-number-${stepKey}"
             class="input step-number"
             type="number"
+            data-size="small"
             min="${min}"
             max="${max}"
             .value=${live(value)}

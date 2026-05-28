@@ -1,8 +1,8 @@
 import { html, render } from "lit-html";
-import { store } from "../state/store";
-import { STEPS, deriveSwatches, maxInGamutChroma, type Step } from "../state";
-import type { State, PaletteConfig } from "../state/types";
-import "./step-slider";
+import { store } from "../../state/store";
+import { STEPS, deriveSwatches, maxInGamutChroma, type Step } from "../../state";
+import type { State, PaletteConfig } from "../../state/types";
+import "../shared/step-slider";
 import "./palette-origin";
 
 /**
@@ -49,37 +49,35 @@ class PalettePanel extends HTMLElement {
 
     render(
       html`
-        <section class="the-grid gap-xl">
-          <div class="the-grid__configuration palette-origin stack gap-2xs">
-            <input
-              id="palette-name-${this.#paletteId}"
-              type="text"
-              class="input palette-name-input"
-              .value=${palette.name}
-              placeholder="Palette name"
-              aria-label="Palette name"
-              @change=${this.#onNameChange}
-            />
+        <section class="stack gap-l">
+          <div class=" stack-horizontal gap-2xs items-end">
+            <label class="stack" for="palette-name-${this.#paletteId}">
+              <div class="label">Palette name</div>
+              <input
+                id="palette-name-${this.#paletteId}"
+                type="text"
+                class="input palette-name-input"
+                .value=${palette.name}
+                placeholder="Palette name"
+                aria-label="Palette name"
+                @change=${this.#onNameChange}
+              />
+            </label>
+
             <palette-origin
               palette-id="${this.#paletteId}"
               l="${palette.origin.l}"
               c="${palette.origin.c}"
               h="${palette.origin.h}"
             ></palette-origin>
-            <div class="mt-auto stack-horizontal gap-s">
-              <button
-                class="button flex-1"
-                title="Clone palette"
-                data-size="small"
-                @click=${this.#onCloneClick}
-              >
+            <div class="ml-auto stack-horizontal gap-s">
+              <button class="button" title="Clone palette" @click=${this.#onCloneClick}>
                 <svg class="icon" viewBox="0 0 24 24"><use href="#icon-clone" /></svg>
                 Clone
               </button>
               <button
-                class="button flex-1"
+                class="button"
                 title="Remove palette"
-                data-size="small"
                 ?disabled=${paletteCount <= 1}
                 @click=${this.#onRemoveClick}
               >
@@ -88,7 +86,7 @@ class PalettePanel extends HTMLElement {
               </button>
             </div>
           </div>
-          <div class="the-grid__steps stack gap-m">
+          <div class=" stack gap-m">
             <div class="palette-grid" data-palette-grid>
               ${swatches.map(
                 (swatch) => html`

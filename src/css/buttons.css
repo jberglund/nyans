@@ -84,7 +84,7 @@
 
 @layer buttons.state {
   :where(.button):hover {
-    background: var(--surface-hover);
+    filter: brightness(0.98);
   }
 
   :where(.button):active {

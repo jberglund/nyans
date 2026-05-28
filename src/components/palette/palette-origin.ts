@@ -1,7 +1,7 @@
 import Color from "colorjs.io";
 import { html, render } from "lit-html";
 import { live } from "lit-html/directives/live.js";
-import { originToHex } from "../state";
+import { originToHex } from "../../state";
 
 /**
  * Origin color editor: swatch, color picker, hex input, OKLCH readout.
@@ -48,47 +48,50 @@ class PaletteOrigin extends HTMLElement {
 
     render(
       html`
-        <div class="overlap">
+        <div class="stack-horizontal gap-m">
+          <div class="stack">
+            <div class="label">Origin color</div>
+            <div class="overlap">
+              <label
+                class="origin-swatch self-stretch self-justify-end"
+                for="origin-${this.#paletteId}"
+                style="background-color: oklch(${this.#l.toFixed(3)} ${this.#c.toFixed(
+                  3,
+                )} ${this.#h.toFixed(1)})"
+                title="Click to change origin color"
+              ></label>
+              <input
+                type="color"
+                .value=${live(hex)}
+                id="origin-${this.#paletteId}"
+                name="origin"
+                @input=${this.#onColorInput}
+              />
+              <input
+                id="origin-text-${this.#paletteId}"
+                type="text"
+                class="input "
+                .value=${hex}
+                placeholder="#000000"
+                aria-label="Origin color value"
+                @change=${this.#onTextInput}
+              />
+            </div>
+          </div>
+          <div class="">
+            <div class="inline-flex gap-xs fs-xs t-tabular text-mid">
+              <span> L </span>
+              <span class="t-bold text-high">${this.#l.toFixed(3)}</span>
+            </div>
 
-        <label
-          class="origin-swatch self-stretch self-justify-end"
-          for="origin-${this.#paletteId}"
-          style="background-color: oklch(${this.#l.toFixed(3)} ${this.#c.toFixed(
-            3,
-          )} ${this.#h.toFixed(1)})"
-          title="Click to change origin color"
-        ></label>
-        <input
-          type="color"
-          .value=${live(hex)}
-          id="origin-${this.#paletteId}"
-          name="origin"
-          @input=${this.#onColorInput}
-        />
-        <input
-          id="origin-text-${this.#paletteId}"
-          type="text"
-          class="input origin-text border-default fs-xs"
-          .value=${hex}
-          placeholder="#000000"
-          aria-label="Origin color value"
-          @change=${this.#onTextInput}
-        />
-        </div>
-        <div class="">
-          <div class="inline-flex gap-xs fs-xs t-tabular text-mid">
-            <span> L </span>
-            <span class="t-bold text-high">${this.#l.toFixed(3)}</span>
-          </div>
-
-          <div class="inline-flex gap-xs fs-xs t-tabular text-mid">
-            <span> C </span>
-            <span class="t-bold text-high">${this.#c.toFixed(3)}</span>
-          </div>
-          <div class="inline-flex gap-xs fs-xs t-tabular text-mid">
-            <span> H </span>
-            <span class="t-bold text-high">${this.#h.toFixed(1)}°</span>
-          </div>
+            <div class="inline-flex gap-xs fs-xs t-tabular text-mid">
+              <span> C </span>
+              <span class="t-bold text-high">${this.#c.toFixed(3)}</span>
+            </div>
+            <div class="inline-flex gap-xs fs-xs t-tabular text-mid">
+              <span> H </span>
+              <span class="t-bold text-high">${this.#h.toFixed(1)}°</span>
+            </div>
           </div>
         </div>
       `,

@@ -2,6 +2,35 @@ import { STEPS, type Curve, type BezierControls } from "./types";
 import { snap } from "./derive";
 
 // ---------------------------------------------------------------------------
+// Handle constraints
+// ---------------------------------------------------------------------------
+
+/**
+ * Enforce that control handles stay on the interior side of their anchors.
+ *
+ * When p0 is above p3 (p0y < p3y):
+ *   p1y ≥ p0y  (p1 can't go visually above p0)
+ *   p2y ≤ p3y  (p2 can't go visually below p3)
+ *
+ * When p0 is below p3 (p0y > p3y), the rules flip.
+ *
+ * x-values and anchors themselves are never modified.
+ */
+export function constrainControls(c: BezierControls): BezierControls {
+  let { p1y, p2y } = c;
+
+  if (c.p0y < c.p3y) {
+    p1y = Math.max(p1y, c.p0y);
+    p2y = Math.min(p2y, c.p3y);
+  } else if (c.p0y > c.p3y) {
+    p1y = Math.min(p1y, c.p0y);
+    p2y = Math.max(p2y, c.p3y);
+  }
+
+  return { ...c, p1y, p2y };
+}
+
+// ---------------------------------------------------------------------------
 // Bezier math  (P0.x=0, P3.x=1 fixed; P0.y, P3.y variable)
 // --------------------------------------------------------------------------
 

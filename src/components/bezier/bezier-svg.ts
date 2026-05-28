@@ -1,6 +1,6 @@
 import { svg } from "lit-html";
-import { STEPS, type BezierControls } from "../state/types";
-import { bezierYAtX } from "../state/bezier";
+import { STEPS, type BezierControls } from "../../state/types";
+import { bezierYAtX } from "../../state/bezier";
 
 // ---------------------------------------------------------------------------
 // Constants

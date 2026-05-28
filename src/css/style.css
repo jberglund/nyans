@@ -56,19 +56,16 @@
   height: 1em;
   color: var(--accent);
 }
+.label {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-xs);
+}
 
-.the-grid {
+.grid {
   display: grid;
-  grid-template-columns: 200px 1fr;
-  grid-template-areas: "configuration steps";
 }
-
-.the-grid__configuration {
-  grid-area: configuration;
-}
-
-.the-grid__steps {
-  grid-area: steps;
+.block {
+  display: block;
 }
 
 .palette-grid {
@@ -97,21 +94,12 @@ step-slider {
 
 /* Origin swatch — clickable preview that opens the hidden color picker */
 .origin-swatch {
-  display: block;
-  width: 3rem;
+  width: 1rem;
+  margin: var(--spacing-xs);
   border-radius: 4px;
   border: none;
   cursor: pointer;
   z-index: 10;
-  margin: 4px;
-}
-
-.origin-text {
-  font: inherit;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  padding: 0.2rem 0.3rem;
-  border-radius: 3px;
-  width: 100%;
 }
 
 .palette-swatch {
@@ -146,6 +134,9 @@ step-slider {
   border-radius: 8px;
   max-width: 640px;
   width: 92vw;
+  left: auto;
+  right: 0;
+  margin-right: var(--spacing-m);
 }
 
 .export-dialog::backdrop {

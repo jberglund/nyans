@@ -14,7 +14,7 @@
   --spacing-5xl: calc(8 * var(--base-font-size));
   --spacing-6xl: calc(12 * var(--base-font-size));
 
-  --typescale: 1.125;
+  --typescale: 1.2;
   --font-size-xs: calc(var(--base-font-size) * pow(var(--typescale), -2));
   --font-size-s: calc(var(--base-font-size) * pow(var(--typescale), -1));
   --font-size-m: var(--base-font-size); /*  17px   */
@@ -75,6 +75,7 @@
 
   /* Borders */
   --border-default: var(--neutral-150);
+  --border-strong: var(--neutral-250);
 
   /* Accent */
   --accent: #2563eb;

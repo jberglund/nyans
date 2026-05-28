@@ -1,10 +1,10 @@
 import { html, render } from "lit-html";
 import { live } from "lit-html/directives/live.js";
-import { store } from "../state/store";
-import "./number-slider";
+import { store } from "../../state/store";
+import "../shared/number-slider";
 import { openExportDialog } from "./export-dialog";
-import { maxChromaTip, ceilingTip } from "./tool-tip-content";
-import type { State, AppSettings } from "../state/types";
+import { maxChromaTip, ceilingTip } from "../shared/tool-tip-content";
+import type { State, AppSettings } from "../../state/types";
 
 const CEILING_OPTIONS = [
   { value: "srgb", label: "sRGB" },
@@ -50,7 +50,7 @@ class PaletteToolbar extends HTMLElement {
         >
           <div class="stack gap-s p-m">
             <label class="p-2xs inline-flex items-center gap-xs fs-s surface-raised border-default">
-              <span>Max chroma<tool-tip>${maxChromaTip}</tool-tip></span>
+              <span class="label">Max chroma<tool-tip>${maxChromaTip}</tool-tip></span>
               <number-slider>
                 <input
                   id="max-chroma"
@@ -66,7 +66,7 @@ class PaletteToolbar extends HTMLElement {
             </label>
 
             <label class="p-2xs inline-flex items-center gap-xs fs-s surface-raised border-default">
-              <span>Target colorspace<tool-tip>${ceilingTip}</tool-tip></span>
+              <span class="label">Target colorspace<tool-tip>${ceilingTip}</tool-tip></span>
               <select .value=${settings.ceilingGamut} @change=${this.#onCeilingChange}>
                 ${CEILING_OPTIONS.map(
                   (opt) => html`
