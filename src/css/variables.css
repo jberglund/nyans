@@ -64,7 +64,7 @@
   /* Text */
   --text-high: var(--neutral-800);
   --text-mid: var(--neutral-650);
-  --text-low: var(--neutral-350);
+  --text-low: var(--neutral-550);
 
   /* Surfaces */
   --surface-sunken: var(--neutral-0);
@@ -74,11 +74,17 @@
   --surface-overlay: oklch(0 0 0 / 0.06);
 
   /* Borders */
-  --border-default: var(--neutral-150);
+  --border-weak: var(--neutral-150);
+  --border-default: var(--neutral-200);
   --border-strong: var(--neutral-250);
 
   /* Accent */
-  --accent: #2563eb;
+  --accent: oklch(0.56 0.21 256.74);
+
+  /* Form controls */
+  --border-error: var(--neutral-500);
+  --slider-thumb: var(--neutral-450);
+  --slider-thumb-focus: var(--neutral-850);
 
   /* Shadows */
   --shadow-default: 0 2px 12px oklch(0 0 0 / 0.12);
@@ -93,4 +99,41 @@
     var(--border-default) 0 1px,
     transparent 0px 4px
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Dark theme                                                         */
+/* ------------------------------------------------------------------ */
+
+[data-theme="dark"]:root {
+  /* Text — flip to light end of the scale */
+  --text-high: var(--neutral-100);
+  --text-mid: var(--neutral-200);
+  --text-low: var(--neutral-300);
+
+  /* Surfaces — flip to dark end */
+  --surface-sunken: var(--neutral-950);
+  --surface-default: var(--neutral-900);
+  --surface-raised: var(--neutral-850);
+  --surface-hover: var(--neutral-800);
+  --surface-overlay: oklch(1 0 0 / 0.06);
+
+  /* Borders — move to darker stops */
+  --border-weak: var(--neutral-800);
+  --border-default: var(--neutral-750);
+  --border-strong: var(--neutral-650);
+
+  --accent: oklch(0.71 0.19 233.44);
+
+  /* Form controls */
+  --border-error: var(--neutral-350);
+  --slider-thumb: var(--neutral-350);
+  --slider-thumb-focus: var(--neutral-150);
+
+  /* Shadows — deeper so they read against dark surfaces */
+  --shadow-default: 0 2px 12px oklch(0 0 0 / 0.4);
+  --shadow-dialog: 0 4px 24px oklch(0 0 0 / 0.5);
+
+  /* Scrim — darker overlay */
+  --scrim: oklch(0 0 0 / 0.6);
 }

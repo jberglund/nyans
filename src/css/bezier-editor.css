@@ -12,8 +12,8 @@
 /* Plot background rectangle */
 .bezier-editor__plot-bg {
   fill: var(--surface-sunken);
-  stroke: var(--text-low);
-  stroke-width: 0.5;
+  stroke: var(--border-default);
+  stroke-width: 1;
 }
 
 /* X/Y axis lines */
@@ -45,16 +45,41 @@
 
 /* Vertical step grid + horizontal reference lines */
 .bezier-editor__grid-line {
-  stroke: var(--text-low);
+  stroke: var(--border-strong);
   stroke-width: 0.5;
   stroke-dasharray: 2 2;
 }
 
 /* Step diamonds */
 .bezier-editor__step-diamond {
-  fill: var(--text-low);
-  stroke: var(--text-mid);
+  fill: var(--accent);
+  stroke: var(--border-strong);
   stroke-width: 0.5;
+}
+
+/* Step values row — labels + computed curve values below the SVG */
+.bezier-editor__step-values {
+  display: flex;
+  justify-content: space-around;
+}
+
+.bezier-editor__step-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 8px;
+  line-height: 1.3;
+  min-width: 0;
+}
+
+.bezier-editor__step-value-label {
+  color: var(--text-low);
+  font-family: var(--font-mono, monospace);
+}
+
+.bezier-editor__step-value-num {
+  color: var(--text-mid);
+  font-family: var(--font-mono, monospace);
 }
 
 /* Draggable handle (P1 / P2) — diamond (rotated square) */
@@ -79,4 +104,19 @@
 
 .bezier-editor__handle-dot--active {
   fill: var(--surface-default);
+}
+
+/* Focus ring for keyboard-navigable handle groups */
+.bezier-editor__handle-group:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Value labels beside anchor handles */
+.bezier-editor__anchor-label {
+  fill: var(--text-mid);
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  pointer-events: none;
+  user-select: none;
 }

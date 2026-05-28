@@ -16,9 +16,9 @@
     --input-placeholder: var(--text-low);
     --input-checked-foreground: var(--accent);
 
-    --border-control-hover: var(--neutral-250);
+    --border-control-hover: var(--border-strong);
     --border-control-focused: var(--accent);
-    --border-control-error: var(--neutral-500);
+    --border-control-error: var(--border-error);
     --foreground-muted: var(--text-low);
 
     --size-control-height-medium: 1.75rem;
@@ -72,6 +72,7 @@
     border-radius: var(--input-border-radius);
     min-height: var(--_input-height);
     font-size: var(--_input-font-size);
+    font-weight: var(--font-weight-medium);
     outline-offset: 0px;
     transition:
       outline-color var(--interaction-transition-duration-quick)
@@ -80,7 +81,7 @@
         var(--interaction-transition-easing-default);
     border-style: solid;
     border-width: 1px;
-    outline: 1px solid #0000;
+    outline: 1px solid transparent;
 
     &::placeholder {
       color: var(--input-placeholder);
@@ -111,7 +112,7 @@
   :where(.radio, .checkbox)::after {
     content: "";
     aspect-ratio: 1;
-    color: #0000;
+    color: #000;
     pointer-events: none;
     width: 90%;
     transition: color var(--interaction-transition-duration-quick)
@@ -213,6 +214,12 @@
       font-weight: var(--font-weight-medium);
     }
 
+    :where(.select) option:focus-visible {
+      outline-offset: 0;
+      outline-style: solid;
+      outline-color: var(--button-focus-ring-color);
+    }
+
     :where(.select) option::checkmark {
       color: var(--input-checked-foreground);
     }
@@ -252,8 +259,8 @@
   --wrapper-height: 30px;
   --thumb-width: 22px;
   --thumb-height: 4px;
-  --thumb-color: var(--neutral-450);
-  --thumb-border: 1px solid var(--neutral-600);
+  --thumb-color: var(--slider-thumb);
+  --thumb-border: 1px solid var(--border-strong);
   --thumb-opacity: 0.5;
   --thumb-radius: 4px;
 
@@ -269,7 +276,7 @@
   font: inherit;
 }
 :where(.range-input):focus-visible {
-  --thumb-color: var(--neutral-850);
+  --thumb-color: var(--slider-thumb-focus);
 }
 input[type="number"]::-webkit-inner-spin-button {
   display: none;

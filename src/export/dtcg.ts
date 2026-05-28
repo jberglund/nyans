@@ -2,6 +2,12 @@ import { deriveSwatches } from "../state";
 import type { State } from "../state/types";
 import { type ExportOptions, resolvePaletteIds, paletteName } from "./types";
 
+interface DTCGColorValue {
+  colorSpace: "oklch";
+  components: [number, number, number];
+  alpha: number;
+}
+
 /**
  * Generate DTCG-format design tokens for one or all palettes.
  *
@@ -12,14 +18,20 @@ import { type ExportOptions, resolvePaletteIds, paletteName } from "./types";
  * ```json
  * {
  *   "p1": {
- *     "0": { "$value": "oklch(0.98 0.02 264)", "$type": "color" },
- *     "50": { "$value": "oklch(0.95 0.04 264)", "$type": "color" }
+ *     "600": {
+ *       "$type": "color",
+ *       "$value": {
+ *         "colorSpace": "oklch",
+ *         "components": [0.6, 0.216, 269],
+ *         "alpha": 1
+ *       }
+ *     }
  *   }
  * }
  * ```
  */
 export function toDTCG(state: State, options: ExportOptions): string {
-  const result: Record<string, Record<string, { $value: string; $type: "color" }>> = {};
+  const result: Record<string, Record<string, { $value: DTCGColorValue; $type: "color" }>> = {};
 
   for (const paletteId of resolvePaletteIds(state, options.paletteIds)) {
     const swatches = deriveSwatches(state, paletteId);
@@ -29,7 +41,11 @@ export function toDTCG(state: State, options: ExportOptions): string {
     result[key] = {};
     for (const swatch of swatches) {
       result[key][swatch.step] = {
-        $value: swatch.css,
+        $value: {
+          colorSpace: "oklch",
+          components: [swatch.l, swatch.c, swatch.h],
+          alpha: 1,
+        },
         $type: "color",
       };
     }

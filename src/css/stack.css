@@ -54,6 +54,9 @@
   .justify-between {
     justify-content: space-between;
   }
+  .justify-around {
+    justify-content: space-around;
+  }
 
   .grow {
     flex-grow: 1;

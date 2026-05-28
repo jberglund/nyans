@@ -43,7 +43,7 @@
   display: grid;
   gap: 6rem;
   padding: 1rem;
-  max-width: 1200px;
+  max-width: min(1200px, 100svw);
   margin-inline: auto;
 }
 
@@ -59,6 +59,7 @@
 .label {
   font-weight: var(--font-weight-bold);
   font-size: var(--font-size-xs);
+  color: var(--text-low);
 }
 
 .grid {
@@ -66,6 +67,34 @@
 }
 .block {
   display: block;
+}
+
+:where([popover]) {
+  background: var(--surface-default);
+  color: var(--text-mid);
+}
+
+:where([popover]) {
+  transition:
+    opacity 0.2s,
+    transform 0.2s,
+    display 0.2s allow-discrete;
+  transition-timing-function: ease-out;
+  opacity: 0;
+  transform: translateY(0.25rem);
+
+  &:popover-open {
+    opacity: 1;
+    transform: none;
+    scale: none;
+    @starting-style {
+      & {
+        opacity: 0;
+        transform: translateY(0.5rem);
+        scale: 0.98;
+      }
+    }
+  }
 }
 
 .palette-grid {
@@ -78,7 +107,7 @@
   overflow: clip;
 }
 
-step-slider {
+step-slider:not(:last-child) {
   border-right: 1px solid var(--border-default);
 }
 
@@ -141,29 +170,6 @@ step-slider {
 
 .export-dialog::backdrop {
   background: var(--scrim);
-}
-
-.export-dialog__title {
-  font-size: 1.1rem;
-}
-
-/* fieldset reset — layout handled by utility classes in the template */
-.export-dialog fieldset {
-  border-radius: 4px;
-}
-
-.export-dialog__checkbox {
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-.export-dialog__checkbox input[type="checkbox"] {
-  margin: 0;
-  accent-color: var(--text-mid);
-}
-
-.export-dialog__preview-wrapper {
-  min-width: 0;
 }
 
 .export-dialog__preview {

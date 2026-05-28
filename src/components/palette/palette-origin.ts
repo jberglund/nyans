@@ -49,11 +49,11 @@ class PaletteOrigin extends HTMLElement {
     render(
       html`
         <div class="stack-horizontal gap-m">
-          <div class="stack">
+          <div class="stack gap-2xs">
             <div class="label">Origin color</div>
             <div class="overlap">
               <label
-                class="origin-swatch self-stretch self-justify-end"
+                class="origin-swatch self-stretch self-justify-start"
                 for="origin-${this.#paletteId}"
                 style="background-color: oklch(${this.#l.toFixed(3)} ${this.#c.toFixed(
                   3,
@@ -70,7 +70,8 @@ class PaletteOrigin extends HTMLElement {
               <input
                 id="origin-text-${this.#paletteId}"
                 type="text"
-                class="input "
+                data-size="large"
+                class="input pl-xl"
                 .value=${hex}
                 placeholder="#000000"
                 aria-label="Origin color value"
@@ -78,7 +79,8 @@ class PaletteOrigin extends HTMLElement {
               />
             </div>
           </div>
-          <div class="">
+          <div class="mt-auto p-2xs">
+            <span>=</span>
             <div class="inline-flex gap-xs fs-xs t-tabular text-mid">
               <span> L </span>
               <span class="t-bold text-high">${this.#l.toFixed(3)}</span>

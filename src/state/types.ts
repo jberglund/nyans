@@ -77,6 +77,8 @@ export interface BezierControls {
   p3y: number;
 }
 
+export type DragTarget = "p0" | "p1" | "p2" | "p3";
+
 /** The full application state. */
 export interface State {
   /** Bezier curve controls — the source of truth for the lightness curve. */

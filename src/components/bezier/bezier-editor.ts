@@ -1,20 +1,23 @@
-import { svg, html, render } from "lit-html";
+import { html, render } from "lit-html";
 import { STEPS } from "../../state";
-import { BEZIER_PRESETS, bezierToCurve, bezierYAtX, constrainControls } from "../../state/bezier";
+import {
+  BEZIER_PRESETS,
+  bezierToCurve,
+  constrainControls,
+  findMatchingPreset,
+} from "../../state/bezier";
 import { snap } from "../../state/derive";
 import { store } from "../../state/store";
-import type { BezierControls, State, Curve } from "../../state/types";
+import { renderBezierSvg } from "./bezier-svg";
+import type { BezierControls, DragTarget, State } from "../../state/types";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const DEFAULT_HEIGHT = 200;
-const PAD = 0;
-const HANDLE_SIZE = 12;
-const HANDLE_DOT_SIZE = 4;
-const STEP_DIAMOND_SIZE = 8;
-const H_GRID_LINES = 4;
+const DEFAULT_HEIGHT = 250;
+const NUDGE = 0.001;
+const NUDGE_LARGE = 0.01;
 
 // ---------------------------------------------------------------------------
 // Component
@@ -31,33 +34,20 @@ const H_GRID_LINES = 4;
  *   P3 = (1, p3y) — right-anchored, vertical-drag only (end lightness)
  *   P1, P2 — fully draggable shape handles
  *
- * @attr height — fixed px height for the SVG plot (default 200).
+ * @attr height — fixed px height for the SVG plot (default 250).
  */
 class BezierEditor extends HTMLElement {
   static get observedAttributes() {
     return ["height"];
   }
 
-  // Bezier controls — default to the S-curve shape with default lightness range
-  #p0y = BEZIER_PRESETS[0].controls.p0y;
-  #p1x = BEZIER_PRESETS[0].controls.p1x;
-  #p1y = BEZIER_PRESETS[0].controls.p1y;
-  #p2x = BEZIER_PRESETS[0].controls.p2x;
-  #p2y = BEZIER_PRESETS[0].controls.p2y;
-  #p3y = BEZIER_PRESETS[0].controls.p3y;
-
-  // Preset tracking
+  #controls: BezierControls = { ...BEZIER_PRESETS[0].controls };
   #activePresetKey: string | null = BEZIER_PRESETS[0].key;
+  #dragging: DragTarget | null = null;
 
-  // Drag
-  #dragging: "p0" | "p1" | "p2" | "p3" | null = null;
-
-  // Sizing
   #svgHeight = DEFAULT_HEIGHT;
   #actualWidth = 300;
   #resizeObserver: ResizeObserver | null = null;
-
-  // Store
   #unsub: (() => void) | null = null;
 
   // -------------------------------------------------------------------
@@ -65,8 +55,8 @@ class BezierEditor extends HTMLElement {
   // -------------------------------------------------------------------
 
   connectedCallback() {
-    this.#readAttrs();
     this.#render();
+    this.#observe();
     this.#unsub = store.subscribe(this.#onStoreChange);
   }
 
@@ -77,11 +67,10 @@ class BezierEditor extends HTMLElement {
   }
 
   attributeChangedCallback(name: string, _old: string, newValue: string) {
-    if (name === "height") {
-      const v = parseFloat(newValue);
-      if (!isNaN(v) && v > 0) this.#svgHeight = v;
-      this.#render();
-    }
+    if (name !== "height") return;
+    const v = Number(newValue);
+    if (Number.isFinite(v) && v > 0) this.#svgHeight = v;
+    if (this.isConnected) this.#render();
   }
 
   // -------------------------------------------------------------------
@@ -89,9 +78,7 @@ class BezierEditor extends HTMLElement {
   // -------------------------------------------------------------------
 
   #observe() {
-    this.#resizeObserver?.disconnect();
-    const svgEl = this.querySelector("svg");
-    if (!svgEl) return;
+    if (this.#resizeObserver) return;
     this.#resizeObserver = new ResizeObserver((entries) => {
       const rect = entries[0]?.contentRect;
       if (rect && rect.width > 0 && Math.abs(rect.width - this.#actualWidth) > 0.5) {
@@ -99,101 +86,66 @@ class BezierEditor extends HTMLElement {
         this.#render();
       }
     });
-    this.#resizeObserver.observe(svgEl);
-  }
-
-  get #pw() {
-    return this.#actualWidth - 2 * PAD;
-  }
-  get #ph() {
-    return this.#svgHeight - 2 * PAD;
+    this.#resizeObserver.observe(this);
   }
 
   // -------------------------------------------------------------------
   // Coordinate helpers
   // -------------------------------------------------------------------
 
-  #toX = (n: number) => PAD + n * this.#pw;
-  #toY = (n: number) => PAD + n * this.#ph;
-
-  #fromX = (px: number) => Math.max(0, Math.min(1, (px - PAD) / this.#pw));
-  #fromY = (py: number) => Math.max(0, Math.min(1, (py - PAD) / this.#ph));
+  #fromX = (px: number) => clamp01(px / this.#actualWidth);
+  #fromY = (py: number) => clamp01(py / this.#svgHeight);
 
   // -------------------------------------------------------------------
-  // Derived
+  // Derived (snapped for display)
   // -------------------------------------------------------------------
 
   /** startL = 1 − p0y  (y=0 → bright top, so p0y near 0 means startL near 1) */
   get #startL() {
-    return snap(1 - this.#p0y);
+    return snap(1 - this.#controls.p0y);
   }
 
   /** endL = 1 − p3y */
   get #endL() {
-    return snap(1 - this.#p3y);
+    return snap(1 - this.#controls.p3y);
   }
 
   // -------------------------------------------------------------------
-  // Store
+  // Commit — apply constraints, sync preset, push to store, re-render
   // -------------------------------------------------------------------
 
-  #pushCurve() {
+  #commit() {
+    this.#controls = constrainControls(this.#controls);
+    this.#activePresetKey = findMatchingPreset(this.#controls);
     store.setBezierControls(this.#controls);
+    this.#render();
   }
 
-  get #controls(): BezierControls {
-    return {
-      p0y: this.#p0y,
-      p1x: this.#p1x,
-      p1y: this.#p1y,
-      p2x: this.#p2x,
-      p2y: this.#p2y,
-      p3y: this.#p3y,
-    };
-  }
-
-  #constrain() {
-    const constrained = constrainControls(this.#controls);
-    this.#p1y = constrained.p1y;
-    this.#p2y = constrained.p2y;
-  }
-
-  #onStoreChange = (_state: State) => {
-    const curve = _state.lightness;
-    const matched = BEZIER_PRESETS.find((p) => curvesEqual(curve, bezierToCurve(p.controls)));
-    this.#activePresetKey = matched ? matched.key : null;
-    if (matched) {
-      this.#p0y = matched.controls.p0y;
-      this.#p1x = matched.controls.p1x;
-      this.#p1y = matched.controls.p1y;
-      this.#p2x = matched.controls.p2x;
-      this.#p2y = matched.controls.p2y;
-      this.#p3y = matched.controls.p3y;
-      this.#constrain();
-    }
+  #onStoreChange = (state: State) => {
+    const next = state.bezierControls;
+    if (controlsEqual(next, this.#controls)) return;
+    this.#controls = { ...next };
+    this.#activePresetKey = findMatchingPreset(this.#controls);
     this.#render();
   };
 
   // -------------------------------------------------------------------
-  // Render — full UI
+  // Render
   // -------------------------------------------------------------------
 
   #render() {
-    const startL = this.#startL;
-    const endL = this.#endL;
     const activeKey = this.#activePresetKey;
 
     render(
       html`
-        <section class="">
-          <div class="">
+        <section>
+          <div>
             <div class="stack-horizontal items-end mb-m">
               <h4 class="label mr-auto">Lightness Curve</h4>
               <div class="stack-horizontal gap-s">
                 <label class="label" for="preset">Preset</label>
-
                 <div class="stack-horizontal gap-xs">
-                  <select class="select" id="preset" @change=${this.#onPresetChange} class="flex-1">
+                  <select class="select flex-1" id="preset" @change=${this.#onPresetChange}>
                     <option value="" ?selected=${activeKey === null}>Custom…</option>
                     ${BEZIER_PRESETS.map(
                       (p) => html`
@@ -203,339 +155,166 @@ class BezierEditor extends HTMLElement {
                       `,
                     )}
                   </select>
-                  <button class="button" @click=${this.#onReset}>Reset</button>
+                  <button class="button" @click=${this.#onReset}>Reset curve</button>
                 </div>
               </div>
             </div>
             <div>${this.#renderSvg()}</div>
-          </div>
-
-          <div class="stack gap-s">
-            <div class="stack-horizontal gap-2xs justify-between mt-s">
-              <div class="stack-horizontal gap-2xs">
-                <span class="label">Start</span>
-                <number-slider class="ml-auto">
-                  <input
-                    id="start-lightness"
-                    class="input origin-text border-default t-right"
-                    style="width:9ch"
-                    type="number"
-                    min="0"
-                    max="1"
-                    step="0.001"
-                    .value="${startL}"
-                    @input=${this.#onStartChange}
-                  />
-                </number-slider>
-              </div>
-              <div class="stack-horizontal gap-2xs">
-                <span class="label">End</span>
-                <number-slider class="ml-auto">
-                  <input
-                    id="end-lightness"
-                    class="input origin-text border-default t-right"
-                    style="width:9ch"
-                    type="number"
-                    min="0"
-                    max="1"
-                    step="0.001"
-                    .value="${endL}"
-                    @input=${this.#onEndChange}
-                  />
-                </number-slider>
-              </div>
-            </div>
+            ${this.#renderStepValues()}
           </div>
         </section>
       `,
       this,
     );
-
-    // Re-attach ResizeObserver to newly rendered SVG
-    this.#observe();
   }
 
-  // -------------------------------------------------------------------
-  // Render — SVG plot
-  // -------------------------------------------------------------------
+  #renderStepValues() {
+    const curve = bezierToCurve(this.#controls);
+    return html`
+      <div class="stack-horizontal justify-around mt-xs">
+        ${STEPS.map(
+          (step) => html`
+            <div class="bezier-editor__step-value">
+              <span class="bezier-editor__step-value-label">${step}</span>
+              <span class="bezier-editor__step-value-num">${curve[step].toFixed(2)}</span>
+            </div>
+          `,
+        )}
+      </div>
+    `;
+  }
 
   #renderSvg() {
-    const h = this.#svgHeight;
-    const pw = this.#pw;
-    const ph = this.#ph;
-    const toX = this.#toX;
-    const toY = this.#toY;
-    const num = STEPS.length;
+    return renderBezierSvg({
+      height: this.#svgHeight,
+      plotWidth: this.#actualWidth,
+      plotHeight: this.#svgHeight,
+      controls: this.#controls,
+      startValue: this.#startL,
+      endValue: this.#endL,
+      dragging: this.#dragging,
+      onMove: this.#onMove,
+      onUp: this.#onUp,
+      onPointerDown: this.#onPointerDown,
+      onKeyDown: this.#onKeyDown,
+    });
+  }
+
+  // -------------------------------------------------------------------
+  // Keyboard
+  // -------------------------------------------------------------------
+
+  #onKeyDown = (e: KeyboardEvent, which: DragTarget) => {
+    const step = e.shiftKey ? NUDGE_LARGE : NUDGE;
+    let dx = 0;
+    let dy = 0;
+
+    switch (e.key) {
+      case "ArrowUp":
+        dy = -step;
+        break;
+      case "ArrowDown":
+        dy = step;
+        break;
+      case "ArrowLeft":
+        dx = -step;
+        break;
+      case "ArrowRight":
+        dx = step;
+        break;
+      default:
+        return;
+    }
+
+    e.preventDefault();
+    this.#nudge(which, dx, dy);
+    this.#commit();
+  };
+
+  #nudge(which: DragTarget, dx: number, dy: number) {
     const c = this.#controls;
-
-    // Step diamonds — one per palette stop, centered in equal columns
-    const halfStep = STEP_DIAMOND_SIZE / 2;
-    const stepDiamonds = STEPS.map((_step, i) => {
-      const t = (i + 0.5) / num;
-      const y = bezierYAtX(t, c);
-      const cx = toX(t);
-      const cy = toY(y);
-      return svg`
-        <g transform="rotate(45 ${cx} ${cy})">
-          <rect
-            x="${cx - halfStep}" y="${cy - halfStep}"
-            width="${STEP_DIAMOND_SIZE}" height="${STEP_DIAMOND_SIZE}"
-            rx="1.5" ry="1.5"
-            class="bezier-editor__step-diamond"
-          />
-        </g>
-      `;
-    });
-
-    // Vertical grid lines — column boundaries between step circles
-    const vGrid = Array.from({ length: num - 1 }, (_, i) => {
-      const x = PAD + ((i + 1) / num) * pw;
-      return svg`
-        <line x1="${x}" y1="${PAD}" x2="${x}" y2="${PAD + ph}" class="bezier-editor__grid-line" />
-      `;
-    });
-
-    // Horizontal grid lines — evenly spaced across the plot height
-    const hGrid = Array.from({ length: H_GRID_LINES }, (_, i) => {
-      const y = PAD + ((i + 1) / (H_GRID_LINES + 1)) * ph;
-      return svg`
-        <line x1="${PAD}" y1="${y}" x2="${PAD + pw}" y2="${y}" class="bezier-editor__grid-line" />
-      `;
-    });
-
-    // Anchor positions
-    const p0x = PAD;
-    const p0y = toY(c.p0y);
-    const p3x = PAD + pw;
-    const p3y = toY(c.p3y);
-
-    return svg`
-      <svg
-        width="100%" height="${h}"
-        class="bezier-editor__svg"
-        @pointermove=${this.#onMove}
-        @pointerup=${this.#onUp}
-        @pointerleave=${this.#onUp}
-      >
-        <!-- Plot background -->
-        <rect x="${PAD}" y="${PAD}" width="${pw}" height="${ph}" class="bezier-editor__plot-bg" rx="6" />
-
-        <g class="bezier-editor__grid">
-          ${vGrid}
-          ${hGrid}
-        </g>
-
-        <g class="bezier-editor__steps">
-          ${stepDiamonds}
-        </g>
-
-        <g class="bezier-editor__axes">
-          <line x1="${PAD}" y1="${PAD + ph}" x2="${PAD + pw}" y2="${PAD + ph}" class="bezier-editor__axis" />
-          <line x1="${PAD}" y1="${PAD + ph}" x2="${PAD}" y2="${PAD}" class="bezier-editor__axis" />
-        </g>
-
-        <g class="bezier-editor__curve">
-          <line x1="${p0x}" y1="${p0y}" x2="${toX(c.p1x)}" y2="${toY(c.p1y)}" class="bezier-editor__control-line" />
-          <line x1="${p3x}" y1="${p3y}" x2="${toX(c.p2x)}" y2="${toY(c.p2y)}" class="bezier-editor__control-line" />
-          ${this.#anchorHandle(p0x, p0y, this.#dragging === "p0", "p0")}
-          ${this.#handle(toX(c.p1x), toY(c.p1y), this.#dragging === "p1", "p1")}
-          ${this.#handle(toX(c.p2x), toY(c.p2y), this.#dragging === "p2", "p2")}
-          ${this.#anchorHandle(p3x, p3y, this.#dragging === "p3", "p3")}
-        </g>
-      </svg>
-    `;
+    // P0 and P3 are x-locked at 0 and 1 — ignore horizontal nudges.
+    if (which === "p1" || which === "p2") {
+      c[`${which}x`] = clamp01(c[`${which}x`] + dx);
+    }
+    c[`${which}y`] = clamp01(c[`${which}y`] + dy);
   }
 
-  /** Draggable diamond handle for P1 / P2. */
-  #handle(cx: number, cy: number, active: boolean, which: "p1" | "p2") {
-    const activeMod = active ? " bezier-editor__handle--active" : "";
-    const dotActiveMod = active ? " bezier-editor__handle-dot--active" : "";
-    const half = HANDLE_SIZE / 2;
-    const halfDot = HANDLE_DOT_SIZE / 2;
-    return svg`
-      <g transform="rotate(45 ${cx} ${cy})">
-        <rect
-          x="${cx - half}" y="${cy - half}"
-          width="${HANDLE_SIZE}" height="${HANDLE_SIZE}"
-          rx="2.5" ry="2.5"
-          class="bezier-editor__handle${activeMod}"
-          @pointerdown=${(e: PointerEvent) => this.#start(e, which)}
-        />
-        <rect
-          x="${cx - halfDot}" y="${cy - halfDot}"
-          width="${HANDLE_DOT_SIZE}" height="${HANDLE_DOT_SIZE}"
-          rx="1" ry="1"
-          class="bezier-editor__handle-dot${dotActiveMod}"
-        />
-      </g>
-    `;
-  }
-
-  /** Draggable diamond handle for P0 / P3 (endpoint anchors, vertical-only). */
-  #anchorHandle(cx: number, cy: number, active: boolean, which: "p0" | "p3") {
-    const activeMod = active ? " bezier-editor__handle--active" : "";
-    const dotActiveMod = active ? " bezier-editor__handle-dot--active" : "";
-    const half = HANDLE_SIZE / 2;
-    const halfDot = HANDLE_DOT_SIZE / 2;
-    return svg`
-      <g transform="rotate(45 ${cx} ${cy})">
-        <rect
-          x="${cx - half}" y="${cy - half}"
-          width="${HANDLE_SIZE}" height="${HANDLE_SIZE}"
-          rx="2.5" ry="2.5"
-          class="bezier-editor__handle bezier-editor__handle--anchor${activeMod}"
-          @pointerdown=${(e: PointerEvent) => this.#start(e, which)}
-        />
-        <rect
-          x="${cx - halfDot}" y="${cy - halfDot}"
-          width="${HANDLE_DOT_SIZE}" height="${HANDLE_DOT_SIZE}"
-          rx="1" ry="1"
-          class="bezier-editor__handle-dot${dotActiveMod}"
-        />
-      </g>
-    `;
-  } // -------------------------------------------------------------------
+  // -------------------------------------------------------------------
   // Drag
   // -------------------------------------------------------------------
 
-  #start(e: PointerEvent, which: "p0" | "p1" | "p2" | "p3") {
+  #onPointerDown = (e: PointerEvent, which: DragTarget) => {
     this.#dragging = which;
-    (e.target as Element).setPointerCapture?.(e.pointerId);
+    const svgEl = this.querySelector("svg");
+    svgEl?.setPointerCapture?.(e.pointerId);
+    (e.target as Element).closest<SVGGElement>(".bezier-editor__handle-group")?.focus();
     this.#render();
     e.preventDefault();
-  }
+  };
 
   #onMove = (e: PointerEvent) => {
-    if (!this.#dragging) return;
+    const which = this.#dragging;
+    if (!which) return;
 
     const svgEl = this.querySelector("svg")!;
     const rect = svgEl.getBoundingClientRect();
     const sx = this.#actualWidth / rect.width;
     const sy = this.#svgHeight / rect.height;
-    const px = (e.clientX - rect.left) * sx;
-    const py = (e.clientY - rect.top) * sy;
-    const ny = this.#fromY(py);
+    const nx = this.#fromX((e.clientX - rect.left) * sx);
+    const ny = this.#fromY((e.clientY - rect.top) * sy);
 
-    switch (this.#dragging) {
-      case "p0":
-        // x is fixed at 0
-        this.#p0y = ny;
-        break;
-      case "p1":
-        this.#p1x = this.#fromX(px);
-        this.#p1y = ny;
-        break;
-      case "p2":
-        this.#p2x = this.#fromX(px);
-        this.#p2y = ny;
-        break;
-      case "p3":
-        // x is fixed at 1
-        this.#p3y = ny;
-        break;
+    const c = this.#controls;
+    // P0 and P3 are x-locked at 0 and 1 — only y moves.
+    if (which === "p1" || which === "p2") {
+      c[`${which}x`] = nx;
     }
+    c[`${which}y`] = ny;
 
-    this.#constrain();
-    this.#activePresetKey = findMatchingPreset(this.#controls);
-    this.#render();
-    this.#pushCurve();
+    this.#commit();
   };
 
   #onUp = () => {
-    if (this.#dragging) {
-      this.#dragging = null;
-      this.#render();
-    }
+    if (!this.#dragging) return;
+    this.#dragging = null;
+    this.#render();
   };
 
   // -------------------------------------------------------------------
-  // Event handlers
+  // Preset / reset
   // -------------------------------------------------------------------
 
   #onPresetChange = (e: Event) => {
     const key = (e.target as HTMLSelectElement).value;
     const preset = BEZIER_PRESETS.find((p) => p.key === key);
-    if (preset) {
-      // Apply the full preset shape including endpoints.
-      this.#p0y = preset.controls.p0y;
-      this.#p1x = preset.controls.p1x;
-      this.#p1y = preset.controls.p1y;
-      this.#p2x = preset.controls.p2x;
-      this.#p2y = preset.controls.p2y;
-      this.#p3y = preset.controls.p3y;
-      this.#activePresetKey = preset.key;
-      this.#constrain();
-      this.#pushCurve();
-      this.#render();
-    }
+    if (!preset) return;
+    this.#controls = { ...preset.controls };
+    this.#commit();
   };
 
   #onReset = () => {
-    const c = BEZIER_PRESETS[0].controls;
-    this.#p0y = c.p0y;
-    this.#p1x = c.p1x;
-    this.#p1y = c.p1y;
-    this.#p2x = c.p2x;
-    this.#p2y = c.p2y;
-    this.#p3y = c.p3y;
-    this.#activePresetKey = BEZIER_PRESETS[0].key;
-    this.#constrain();
-    this.#pushCurve();
-    this.#render();
+    this.#controls = { ...BEZIER_PRESETS[0].controls };
+    this.#commit();
   };
-
-  #onStartChange = (e: Event) => {
-    this.#p0y = 1 - parseFloat((e.target as HTMLInputElement).value);
-    this.#activePresetKey = null;
-    this.#constrain();
-    this.#pushCurve();
-    this.#render();
-  };
-
-  #onEndChange = (e: Event) => {
-    this.#p3y = 1 - parseFloat((e.target as HTMLInputElement).value);
-    this.#activePresetKey = null;
-    this.#constrain();
-    this.#pushCurve();
-    this.#render();
-  };
-
-  // -------------------------------------------------------------------
-  // Attrs
-  // -------------------------------------------------------------------
-
-  #readAttrs() {
-    const v = parseFloat(this.getAttribute("height") ?? "");
-    if (!isNaN(v) && v > 0) this.#svgHeight = v;
-  }
 }
 
 // -------------------------------------------------------------------
 // Helpers
 // -------------------------------------------------------------------
 
-function curvesEqual(a: Curve, b: Curve): boolean {
-  for (const step of STEPS) {
-    if (a[step] !== b[step]) return false;
-  }
-  return true;
+function clamp01(v: number): number {
+  return Math.max(0, Math.min(1, v));
 }
 
-/** Match a BezierControls against presets by checking all six values. */
-function findMatchingPreset(c: BezierControls): string | null {
-  for (const p of BEZIER_PRESETS) {
-    if (
-      p.controls.p0y === c.p0y &&
-      p.controls.p1x === c.p1x &&
-      p.controls.p1y === c.p1y &&
-      p.controls.p2x === c.p2x &&
-      p.controls.p2y === c.p2y &&
-      p.controls.p3y === c.p3y
-    ) {
-      return p.key;
-    }
-  }
-  return null;
+function controlsEqual(a: BezierControls, b: BezierControls): boolean {
+  return (
+    a.p0y === b.p0y &&
+    a.p1x === b.p1x &&
+    a.p1y === b.p1y &&
+    a.p2x === b.p2x &&
+    a.p2y === b.p2y &&
+    a.p3y === b.p3y
+  );
 }
 
 // -------------------------------------------------------------------

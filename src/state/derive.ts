@@ -12,6 +12,9 @@ export interface Swatch {
 
 /**
  * Derive all swatches for a palette from the current state.
+ *
+ * All values are already snapped by the store — the invariant is enforced
+ * at every write path (setChroma, setOrigin, bezierToCurve, etc.).
  */
 export function deriveSwatches(state: State, paletteId: string): Swatch[] {
   const palette = state.palettes[paletteId];
@@ -22,13 +25,7 @@ export function deriveSwatches(state: State, paletteId: string): Swatch[] {
     const c = palette.chroma[step];
     const h = palette.origin.h;
 
-    return {
-      step,
-      l: snap(l),
-      c: snap(c),
-      h: snap(h),
-      css: `oklch(${snap(l)} ${snap(c)} ${snap(h)})`,
-    };
+    return { step, l, c, h, css: `oklch(${l} ${c} ${h})` };
   });
 }
 
@@ -60,15 +57,15 @@ export function deriveChromaCurve(
   lightness: Curve,
 ): Curve {
   const maxOriginC = maxInGamutChroma(origin.l, origin.h, DERIVATION_GAMUT);
-  const fillRatio = maxOriginC > 0 ? Math.min(origin.c / maxOriginC, 1.0) : 0;
+  const fillRatio = maxOriginC > 0 ? clamp01(origin.c / maxOriginC) : 0;
 
-  const result: Record<string, number> = {};
+  const result = {} as Curve;
   for (const step of STEPS) {
     const l = lightness[step];
     const ceiling = maxInGamutChroma(l, origin.h, DERIVATION_GAMUT);
     result[step] = snap(ceiling * fillRatio);
   }
-  return result as Curve;
+  return result;
 }
 
 /**
@@ -84,13 +81,21 @@ export function snap(n: number): number {
   return Number(n.toFixed(3));
 }
 
+/** Clamp a value to [0, 1]. */
+function clamp01(n: number): number {
+  return n < 0 ? 0 : n > 1 ? 1 : n;
+}
+
 // ---------------------------------------------------------------------------
 // Memoization
 // ---------------------------------------------------------------------------
 
 /**
  * Wrap a pure function with a Map-based cache, keyed by its stringified
- * arguments. Capped to prevent unbounded growth over long sessions.
+ * arguments. Only safe for functions whose args are primitives (numbers,
+ * strings) — object args would collide on "[object Object]".
+ *
+ * Capped via simple FIFO eviction to prevent unbounded growth.
  */
 function memoize<A extends unknown[], R>(fn: (...args: A) => R, max = 600): (...args: A) => R {
   const cache = new Map<string, R>();
@@ -99,7 +104,10 @@ function memoize<A extends unknown[], R>(fn: (...args: A) => R, max = 600): (...
     const cached = cache.get(key);
     if (cached !== undefined) return cached;
 
-    if (cache.size >= max) cache.clear();
+    if (cache.size >= max) {
+      // Evict the oldest entry (Map iterates in insertion order)
+      cache.delete(cache.keys().next().value!);
+    }
 
     const result = fn(...args);
     cache.set(key, result);
@@ -112,6 +120,18 @@ function memoize<A extends unknown[], R>(fn: (...args: A) => R, max = 600): (...
 // ---------------------------------------------------------------------------
 
 /**
+ * Check whether a given LCH color is in gamut, silently treating exceptions
+ * (e.g. from pathological inputs) as "out of gamut".
+ */
+function isInGamut(l: number, c: number, h: number, gamut: string): boolean {
+  try {
+    return new Color("oklch", [l, c, h]).to(gamut).inGamut();
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Binary search for the maximum chroma at a given L,H that stays within
  * the specified gamut. Used to position the ceiling/danger-zone on sliders.
  */
@@ -120,24 +140,14 @@ function _maxInGamutChroma(l: number, h: number, gamut: string): number {
   let hi = 0.6; // practical upper bound for OKLCH chroma
 
   // If even hi is in gamut, the danger zone is beyond the slider — return hi
-  try {
-    if (new Color("oklch", [l, hi, h]).to(gamut).inGamut()) {
-      return hi;
-    }
-  } catch {
-    // fall through to binary search
-  }
+  if (isInGamut(l, hi, h, gamut)) return hi;
 
   // 16 iterations on [0, 0.6] → precision ~0.00001 (well below slider step 0.001)
   for (let i = 0; i < 16; i++) {
     const mid = (lo + hi) / 2;
-    try {
-      if (new Color("oklch", [l, mid, h]).to(gamut).inGamut()) {
-        lo = mid;
-      } else {
-        hi = mid;
-      }
-    } catch {
+    if (isInGamut(l, mid, h, gamut)) {
+      lo = mid;
+    } else {
       hi = mid;
     }
   }

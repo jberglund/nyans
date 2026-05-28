@@ -37,6 +37,7 @@ class PalettesHeader extends HTMLElement {
             <label class=" inline-flex items-center gap-xs" hotkey-key="l" hotkey-restore-focus>
               <input
                 id="linked-editing"
+                data-size="small"
                 class="checkbox"
                 type="checkbox"
                 .checked=${settings.propagateChanges}

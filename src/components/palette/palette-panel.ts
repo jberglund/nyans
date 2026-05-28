@@ -50,13 +50,14 @@ class PalettePanel extends HTMLElement {
     render(
       html`
         <section class="stack gap-l">
-          <div class=" stack-horizontal gap-2xs items-end">
-            <label class="stack" for="palette-name-${this.#paletteId}">
-              <div class="label">Palette name</div>
+          <div class=" stack-horizontal gap-s items-end">
+            <label class="stack gap-2xs" for="palette-name-${this.#paletteId}">
+              <div class="label">Name</div>
               <input
                 id="palette-name-${this.#paletteId}"
                 type="text"
-                class="input palette-name-input"
+                class="input "
+                data-size="large"
                 .value=${palette.name}
                 placeholder="Palette name"
                 aria-label="Palette name"
@@ -86,7 +87,7 @@ class PalettePanel extends HTMLElement {
               </button>
             </div>
           </div>
-          <div class=" stack gap-m">
+          <div class="stack gap-m overflow-scroll">
             <div class="palette-grid" data-palette-grid>
               ${swatches.map(
                 (swatch) => html`

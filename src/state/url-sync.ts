@@ -75,7 +75,7 @@ function parseHashParams(): State | null {
 function syncToUrl(state: State): void {
   const c = state.bezierControls;
   const parts = [
-    `b=${enc(c.p0y)},${enc(c.p1x)},${enc(c.p1y)},${enc(c.p2x)},${enc(c.p2y)},${enc(c.p3y)}`,
+    `curve=${enc(c.p0y)},${enc(c.p1x)},${enc(c.p1y)},${enc(c.p2x)},${enc(c.p2y)},${enc(c.p3y)}`,
   ];
 
   for (const [id, palette] of Object.entries(state.palettes)) {

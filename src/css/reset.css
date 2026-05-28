@@ -140,4 +140,8 @@
     }
   }
   /* biome-ignore-end lint/complexity/noImportantStyles: We really want these to take precedence */
+
+  :where(h1, h2, h3, h4, h5, h6) {
+    font-weight: var(--font-weight-medium);
+  }
 }

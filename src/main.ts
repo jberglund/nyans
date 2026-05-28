@@ -1,4 +1,5 @@
 import "./css/style.css";
+import "./theme";
 import "./components/shared/gamut-checker";
 import "./components/shared/step-slider";
 import "./components/bezier/bezier-editor";
@@ -72,9 +73,14 @@ function syncPalettes(parent: HTMLElement) {
     }
   }
 
-  // Scroll the most recently added palette into view (skip on initial page load)
+  // Focus the name input of the most recently added palette (skip initial load).
+  // The browser's native focus scrolls it into view, and scroll-behavior: smooth
+  // on <html> makes that smooth.
   if (initialSyncDone && appended.length > 0) {
-    appended[appended.length - 1].scrollIntoView({ behavior: "smooth", block: "nearest" });
+    const input =
+      appended[appended.length - 1].querySelector<HTMLInputElement>('input[type="text"]');
+    input?.focus();
+    input?.select();
   }
   initialSyncDone = true;
 }

@@ -81,7 +81,7 @@ class ExportDialog extends HTMLElement {
       html`
         <div class="export-dialog border-default shadow-dialog p-0" popover="auto">
           <div class="stack gap-m p-l">
-            <h2 class="export-dialog__title m-0">Export Palettes</h2>
+            <h2 class="fs-l m-0">Export Palettes</h2>
 
             <!-- Top row: format + prefix, full width -->
             <div class="stack-horizontal gap-m items-end">
@@ -112,14 +112,16 @@ class ExportDialog extends HTMLElement {
 
             <!-- Bottom row: palette checkboxes + preview, split -->
             <div class="stack-horizontal gap-m items-start">
-              <fieldset class="stack gap-2xs p-s border-default m-0">
-                <legend class="export-dialog__label px-2xs mb-2xs">Palettes</legend>
+              <fieldset class="stack gap-2xs p-0 m-0">
+                <legend class="label px-2xs mb-2xs">Palettes to include</legend>
                 ${allIds.map(
                   (id) => html`
                     <label class="stack-horizontal gap-2xs export-dialog__checkbox t-tabular">
                       <input
                         id="export-palette-${id}"
                         type="checkbox"
+                        class="checkbox"
+                        data-size="small"
                         .checked=${this.#paletteIds.includes(id)}
                         @change=${(e: Event) => this.#onPaletteToggle(id, e)}
                       />
@@ -137,9 +139,9 @@ class ExportDialog extends HTMLElement {
               </fieldset>
 
               <label class="stack gap-3xs export-dialog__preview-wrapper flex-1">
-                <span class="export-dialog__label t-medium fs-xs">Preview</span>
+                <span class="label">Preview</span>
                 <textarea
-                  class="export-dialog__preview border-default surface-raised"
+                  class="textarea"
                   readonly
                   rows="18"
                   spellcheck="false"
@@ -149,7 +151,7 @@ class ExportDialog extends HTMLElement {
             </div>
 
             <!-- Actions -->
-            <div class="stack-horizontal gap-m justify-end">
+            <div class="stack-horizontal gap-s justify-end">
               <button class="button" @click=${this.#onDownload}>Download</button>
               <button class="button button--primary" @click=${this.#onCopy}>
                 ${this.#copied ? "Copied!" : "Copy to clipboard"}

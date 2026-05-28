@@ -4,6 +4,7 @@ import { store } from "../../state/store";
 import "../shared/number-slider";
 import { openExportDialog } from "./export-dialog";
 import { maxChromaTip, ceilingTip } from "../shared/tool-tip-content";
+import { getCurrentTheme, toggleTheme } from "../../theme";
 import type { State, AppSettings } from "../../state/types";
 
 const CEILING_OPTIONS = [
@@ -29,10 +30,23 @@ class PaletteToolbar extends HTMLElement {
 
   #render() {
     const { settings } = store.getState();
+    const theme = getCurrentTheme();
 
     render(
       html`
         <div class="stack-horizontal justify-end gap-m items-stretch py-xl">
+          <button
+            class="button"
+            @click=${() => {
+              toggleTheme();
+              this.#render();
+            }}
+          >
+            <svg class="icon" viewBox="0 0 24 24">
+              <use href=${theme === "dark" ? "#icon-sun" : "#icon-moon"} />
+            </svg>
+            ${theme === "dark" ? "Light" : "Dark"}
+          </button>
           <button class="button" @click=${openExportDialog}>
             <svg class="icon" viewBox="0 0 24 24"><use href="#icon-export" /></svg>
             Export

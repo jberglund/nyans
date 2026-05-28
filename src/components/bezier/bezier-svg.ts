@@ -1,12 +1,12 @@
-import { svg } from "lit-html";
-import { STEPS, type BezierControls } from "../../state/types";
+import { svg, nothing } from "lit-html";
+import { STEPS } from "../../state";
+import { type BezierControls, type DragTarget } from "../../state/types";
 import { bezierYAtX } from "../../state/bezier";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const PAD = 0;
 const HANDLE_SIZE = 12;
 const HANDLE_DOT_SIZE = 4;
 const STEP_DIAMOND_SIZE = 8;
@@ -21,10 +21,24 @@ export interface BezierSvgProps {
   plotWidth: number;
   plotHeight: number;
   controls: BezierControls;
-  dragging: "p0" | "p1" | "p2" | "p3" | null;
+  startValue: number;
+  endValue: number;
+  dragging: DragTarget | null;
   onMove: (e: PointerEvent) => void;
   onUp: () => void;
-  onPointerDown: (e: PointerEvent, which: "p0" | "p1" | "p2" | "p3") => void;
+  onPointerDown: (e: PointerEvent, which: DragTarget) => void;
+  onKeyDown: (e: KeyboardEvent, which: DragTarget) => void;
+}
+
+interface HandleSpec {
+  which: DragTarget;
+  cx: number;
+  cy: number;
+  active: boolean;
+  isAnchor: boolean;
+  label: string;
+  valueNow: number;
+  valueText: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -34,8 +48,8 @@ export interface BezierSvgProps {
 export function renderBezierSvg(props: BezierSvgProps) {
   const { height: h, plotWidth: pw, plotHeight: ph, controls: c, dragging } = props;
 
-  const toX = (n: number) => PAD + n * pw;
-  const toY = (n: number) => PAD + n * ph;
+  const toX = (n: number) => n * pw;
+  const toY = (n: number) => n * ph;
   const num = STEPS.length;
 
   // Step diamonds — one per palette stop, centered in equal columns
@@ -59,25 +73,69 @@ export function renderBezierSvg(props: BezierSvgProps) {
 
   // Vertical grid lines — column boundaries between step circles
   const vGrid = Array.from({ length: num - 1 }, (_, i) => {
-    const x = PAD + ((i + 1) / num) * pw;
+    const x = ((i + 1) / num) * pw;
     return svg`
-      <line x1="${x}" y1="${PAD}" x2="${x}" y2="${PAD + ph}" class="bezier-editor__grid-line" />
+      <line x1="${x}" y1="0" x2="${x}" y2="${ph}" class="bezier-editor__grid-line" />
     `;
   });
 
   // Horizontal grid lines — evenly spaced across the plot height
   const hGrid = Array.from({ length: H_GRID_LINES }, (_, i) => {
-    const y = PAD + ((i + 1) / (H_GRID_LINES + 1)) * ph;
+    const y = ((i + 1) / (H_GRID_LINES + 1)) * ph;
     return svg`
-      <line x1="${PAD}" y1="${y}" x2="${PAD + pw}" y2="${y}" class="bezier-editor__grid-line" />
+      <line x1="0" y1="${y}" x2="${pw}" y2="${y}" class="bezier-editor__grid-line" />
     `;
   });
 
-  // Anchor positions
-  const p0x = PAD;
-  const p0y = toY(c.p0y);
-  const p3x = PAD + pw;
-  const p3y = toY(c.p3y);
+  // Control point positions
+  const p0 = { x: 0, y: toY(c.p0y) };
+  const p1 = { x: toX(c.p1x), y: toY(c.p1y) };
+  const p2 = { x: toX(c.p2x), y: toY(c.p2y) };
+  const p3 = { x: pw, y: toY(c.p3y) };
+
+  // Handle specs — data-driven so all four handles are visible at a glance
+  const handles: HandleSpec[] = [
+    {
+      which: "p0",
+      cx: p0.x,
+      cy: p0.y,
+      active: dragging === "p0",
+      isAnchor: true,
+      label: "Start lightness",
+      valueNow: props.startValue,
+      valueText: props.startValue.toFixed(3),
+    },
+    {
+      which: "p1",
+      cx: p1.x,
+      cy: p1.y,
+      active: dragging === "p1",
+      isAnchor: false,
+      label: "Control point 1",
+      valueNow: c.p1y,
+      valueText: `x: ${c.p1x.toFixed(2)}, y: ${c.p1y.toFixed(2)}`,
+    },
+    {
+      which: "p2",
+      cx: p2.x,
+      cy: p2.y,
+      active: dragging === "p2",
+      isAnchor: false,
+      label: "Control point 2",
+      valueNow: c.p2y,
+      valueText: `x: ${c.p2x.toFixed(2)}, y: ${c.p2y.toFixed(2)}`,
+    },
+    {
+      which: "p3",
+      cx: p3.x,
+      cy: p3.y,
+      active: dragging === "p3",
+      isAnchor: true,
+      label: "End lightness",
+      valueNow: props.endValue,
+      valueText: props.endValue.toFixed(3),
+    },
+  ];
 
   return svg`
     <svg
@@ -88,7 +146,7 @@ export function renderBezierSvg(props: BezierSvgProps) {
       @pointerleave=${props.onUp}
     >
       <!-- Plot background -->
-      <rect x="${PAD}" y="${PAD}" width="${pw}" height="${ph}" class="bezier-editor__plot-bg" rx="6" />
+      <rect x="0" y="0" width="${pw}" height="${ph}" class="bezier-editor__plot-bg" rx="6" />
 
       <g class="bezier-editor__grid">
         ${vGrid}
@@ -100,17 +158,16 @@ export function renderBezierSvg(props: BezierSvgProps) {
       </g>
 
       <g class="bezier-editor__axes">
-        <line x1="${PAD}" y1="${PAD + ph}" x2="${PAD + pw}" y2="${PAD + ph}" class="bezier-editor__axis" />
-        <line x1="${PAD}" y1="${PAD + ph}" x2="${PAD}" y2="${PAD}" class="bezier-editor__axis" />
+        <line x1="0" y1="${ph}" x2="${pw}" y2="${ph}" class="bezier-editor__axis" />
+        <line x1="0" y1="${ph}" x2="0" y2="0" class="bezier-editor__axis" />
       </g>
 
       <g class="bezier-editor__curve">
-        <line x1="${p0x}" y1="${p0y}" x2="${toX(c.p1x)}" y2="${toY(c.p1y)}" class="bezier-editor__control-line" />
-        <line x1="${p3x}" y1="${p3y}" x2="${toX(c.p2x)}" y2="${toY(c.p2y)}" class="bezier-editor__control-line" />
-        ${renderAnchorHandle(p0x, p0y, dragging === "p0", "p0", props.onPointerDown)}
-        ${renderHandle(toX(c.p1x), toY(c.p1y), dragging === "p1", "p1", props.onPointerDown)}
-        ${renderHandle(toX(c.p2x), toY(c.p2y), dragging === "p2", "p2", props.onPointerDown)}
-        ${renderAnchorHandle(p3x, p3y, dragging === "p3", "p3", props.onPointerDown)}
+        <line x1="${p0.x}" y1="${p0.y}" x2="${p1.x}" y2="${p1.y}" class="bezier-editor__control-line" />
+        <line x1="${p3.x}" y1="${p3.y}" x2="${p2.x}" y2="${p2.y}" class="bezier-editor__control-line" />
+        ${renderAnchorLabel(p0.x, p0.y, props.startValue, "left")}
+        ${handles.map((h) => renderHandle(h, props.onPointerDown, props.onKeyDown))}
+        ${renderAnchorLabel(p3.x, p3.y, props.endValue, "right")}
       </g>
     </svg>
   `;
@@ -120,29 +177,38 @@ export function renderBezierSvg(props: BezierSvgProps) {
 // Handle rendering
 // ---------------------------------------------------------------------------
 
-type DragTarget = "p0" | "p1" | "p2" | "p3";
 type OnPointerDown = (e: PointerEvent, which: DragTarget) => void;
+type OnKeyDown = (e: KeyboardEvent, which: DragTarget) => void;
 
-/** Draggable diamond handle for P1 / P2. */
-function renderHandle(
-  cx: number,
-  cy: number,
-  active: boolean,
-  which: "p1" | "p2",
-  onPointerDown: OnPointerDown,
-) {
+/** Unified handle — anchors and control points differ only by data, not markup. */
+function renderHandle(spec: HandleSpec, onPointerDown: OnPointerDown, onKeyDown: OnKeyDown) {
+  const { which, cx, cy, active, isAnchor, label, valueNow, valueText } = spec;
   const activeMod = active ? " bezier-editor__handle--active" : "";
   const dotActiveMod = active ? " bezier-editor__handle-dot--active" : "";
+  const anchorMod = isAnchor ? " bezier-editor__handle--anchor" : "";
   const half = HANDLE_SIZE / 2;
   const halfDot = HANDLE_DOT_SIZE / 2;
+
   return svg`
-    <g transform="rotate(45 ${cx} ${cy})">
+    <g
+      class="bezier-editor__handle-group"
+      transform="rotate(45 ${cx} ${cy})"
+      tabindex="0"
+      role="slider"
+      aria-label="${label}"
+      aria-valuenow="${valueNow}"
+      aria-valuemin="0"
+      aria-valuemax="1"
+      aria-valuetext="${valueText}"
+      aria-orientation=${isAnchor ? "vertical" : nothing}
+      @keydown=${(e: KeyboardEvent) => onKeyDown(e, which)}
+      @pointerdown=${(e: PointerEvent) => onPointerDown(e, which)}
+    >
       <rect
         x="${cx - half}" y="${cy - half}"
         width="${HANDLE_SIZE}" height="${HANDLE_SIZE}"
         rx="2.5" ry="2.5"
-        class="bezier-editor__handle${activeMod}"
-        @pointerdown=${(e: PointerEvent) => onPointerDown(e, which)}
+        class="bezier-editor__handle${anchorMod}${activeMod}"
       />
       <rect
         x="${cx - halfDot}" y="${cy - halfDot}"
@@ -154,33 +220,18 @@ function renderHandle(
   `;
 }
 
-/** Draggable diamond handle for P0 / P3 (endpoint anchors, vertical-only). */
-function renderAnchorHandle(
-  cx: number,
-  cy: number,
-  active: boolean,
-  which: "p0" | "p3",
-  onPointerDown: OnPointerDown,
-) {
-  const activeMod = active ? " bezier-editor__handle--active" : "";
-  const dotActiveMod = active ? " bezier-editor__handle-dot--active" : "";
-  const half = HANDLE_SIZE / 2;
-  const halfDot = HANDLE_DOT_SIZE / 2;
+/** Value label placed beside an anchor handle. */
+function renderAnchorLabel(cx: number, cy: number, value: number, side: "left" | "right") {
+  const offset = HANDLE_SIZE / 2 + 10;
+  // "right" = label sits to the right of the handle, text extends rightward.
+  const x = side === "right" ? cx + offset : cx - offset;
+  const anchor = side === "right" ? "start" : "end";
   return svg`
-    <g transform="rotate(45 ${cx} ${cy})">
-      <rect
-        x="${cx - half}" y="${cy - half}"
-        width="${HANDLE_SIZE}" height="${HANDLE_SIZE}"
-        rx="2.5" ry="2.5"
-        class="bezier-editor__handle bezier-editor__handle--anchor${activeMod}"
-        @pointerdown=${(e: PointerEvent) => onPointerDown(e, which)}
-      />
-      <rect
-        x="${cx - halfDot}" y="${cy - halfDot}"
-        width="${HANDLE_DOT_SIZE}" height="${HANDLE_DOT_SIZE}"
-        rx="1" ry="1"
-        class="bezier-editor__handle-dot${dotActiveMod}"
-      />
-    </g>
+    <text
+      x="${x}" y="${cy}"
+      text-anchor="${anchor}"
+      dominant-baseline="central"
+      class="bezier-editor__anchor-label"
+    >${value.toFixed(3)}</text>
   `;
 }

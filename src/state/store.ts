@@ -34,19 +34,16 @@ export class Store {
   /** Baseline curve snapshot used to keep propagation idempotent within a frame. */
   #propagationBase: Curve | null = null;
 
+  /**
+   * @param state  Must satisfy the invariant that `lightness` is derived from
+   *               `bezierControls` via `bezierToCurve`. Callers are responsible
+   *               for this — the constructor trusts its input.
+   */
   constructor(state: State) {
     this.#state = structuredClone(state);
   }
 
   // --- readers ---
-
-  getChroma(paletteId: string, step: Step): number {
-    return this.#state.palettes[paletteId].chroma[step];
-  }
-
-  getOrigin(paletteId: string): Origin {
-    return this.#state.palettes[paletteId].origin;
-  }
 
   getState(): State {
     return this.#state;
@@ -58,31 +55,34 @@ export class Store {
 
   // --- writers ---
 
-  /** Replace the bezier controls and re-derive the lightness curve. */
+  /** Replace the bezier controls and re-derive the lightness curve and all chroma curves. */
   setBezierControls(controls: BezierControls): void {
     this.#state.bezierControls = { ...controls };
     this.#state.lightness = bezierToCurve(controls);
+    this.#recalculateAllChroma();
     this.#scheduleNotify();
   }
 
   setChroma(paletteId: string, step: Step, value: number): void {
+    const palette = this.#state.palettes[paletteId];
+    if (!palette) return;
+
+    const max = this.#state.settings.maxChroma;
     if (this.#state.settings.propagateChanges) {
-      this.#propagate(
-        this.#state.palettes[paletteId].chroma,
-        step,
-        value,
-        this.#state.settings.maxChroma,
-      );
+      this.#propagate(palette.chroma, step, value, max);
     } else {
-      this.#state.palettes[paletteId].chroma[step] = snap(value);
+      palette.chroma[step] = snap(Math.max(0, Math.min(max, value)));
     }
     this.#scheduleNotify();
   }
 
   setOrigin(paletteId: string, l: number, c: number, h: number): void {
+    const palette = this.#state.palettes[paletteId];
+    if (!palette) return;
+
     const origin = { l, c, h };
-    this.#state.palettes[paletteId].origin = origin;
-    this.#state.palettes[paletteId].chroma = deriveChromaCurve(origin, this.#state.lightness);
+    palette.origin = origin;
+    palette.chroma = deriveChromaCurve(origin, this.#state.lightness);
     this.#scheduleNotify();
   }
 
@@ -92,8 +92,15 @@ export class Store {
     this.#scheduleNotify();
   }
 
+  /**
+   * Add a palette with an explicit id and config. Used for cloning — the
+   * caller is responsible for generating the id and building the config.
+   */
   addPalette(id: string, config: PaletteConfig): void {
     this.#state.palettes[id] = config;
+    // Direct notify (not scheduleNotify) so the DOM syncs immediately — this
+    // is a discrete action, not a rapid-fire slider drag, and resetting
+    // #propagationBase mid-frame is harmless here.
     this.#notify();
   }
 
@@ -106,6 +113,7 @@ export class Store {
   }
 
   removePalette(id: string): void {
+    if (!this.#state.palettes[id]) return;
     delete this.#state.palettes[id];
     this.#notify();
   }
@@ -130,7 +138,14 @@ export class Store {
     this.#scheduleNotify();
   }
 
-  /** Replace the entire state — used when hydrating from URL. */
+  /**
+   * Replace the entire state — used when hydrating from URL.
+   *
+   * The same invariant as the constructor applies: `lightness` must be
+   * consistent with `bezierControls`. The URL parser in url-sync.ts
+   * enforces this for the common path; backward-compat URLs (old `L=`
+   * format) intentionally break it to preserve the user's curve.
+   */
   load(state: State): void {
     this.#state = structuredClone(state);
     this.#notify();
@@ -143,7 +158,21 @@ export class Store {
     return () => this.#listeners.delete(fn);
   }
 
+  /** Re-derive chroma for a single palette from its origin and current lightness. */
+  recalculateChroma(paletteId: string): void {
+    this.#deriveChromaFor(paletteId);
+    this.#scheduleNotify();
+  }
+
   // --- internal ---
+
+  /** Pre-computed index lookup to avoid O(n) STEPS.indexOf on every slider drag. */
+  static #STEP_INDEX = Object.fromEntries(STEPS.map((s, i) => [s, i])) as Record<Step, number>;
+
+  /** Minimum sigma for the Gaussian — gives a small spread even at decay=0. */
+  static #SIGMA_MIN = 0.3;
+  /** Scales the quadratic decay→sigma mapping so the spread slider feels useful. */
+  static #SIGMA_SCALE = 15;
 
   /**
    * Apply a delta to every step, weighted by distance from the changed step.
@@ -161,13 +190,13 @@ export class Store {
     const base = this.#propagationBase;
 
     const delta = newValue - base[step];
-    const changedIndex = STEPS.indexOf(step);
+    const changedIndex = Store.#STEP_INDEX[step];
     const spread = this.#state.settings.propagateDecay;
 
     // Gaussian bell curve — creates a smooth bump centered on the dragged
     // slider instead of an exponential taper.  σ² maps the 0.1–0.9 spread
     // slider so d=1 barely moves at 0.1 and d=19 still shifts at 0.9.
-    const sigma = 0.3 + spread * spread * 15;
+    const sigma = Store.#SIGMA_MIN + spread * spread * Store.#SIGMA_SCALE;
     const twoSigmaSq = 2 * sigma * sigma;
 
     for (let i = 0; i < STEPS.length; i++) {
@@ -176,6 +205,18 @@ export class Store {
       const weight = Math.exp(-(distance * distance) / twoSigmaSq);
       const val = base[s] + delta * weight;
       curve[s] = snap(Math.max(0, Math.min(max, val)));
+    }
+  }
+
+  #deriveChromaFor(paletteId: string): void {
+    const palette = this.#state.palettes[paletteId];
+    if (!palette) return;
+    palette.chroma = deriveChromaCurve(palette.origin, this.#state.lightness);
+  }
+
+  #recalculateAllChroma(): void {
+    for (const id of Object.keys(this.#state.palettes)) {
+      this.#deriveChromaFor(id);
     }
   }
 
