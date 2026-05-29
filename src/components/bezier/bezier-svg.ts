@@ -1,5 +1,4 @@
 import { svg, nothing } from "lit-html";
-import { STEPS } from "../../state";
 import { type BezierControls, type DragTarget } from "../../state/types";
 import { bezierYAtX } from "../../state/bezier";
 
@@ -21,6 +20,7 @@ export interface BezierSvgProps {
   plotWidth: number;
   plotHeight: number;
   controls: BezierControls;
+  steps: string[];
   startValue: number;
   endValue: number;
   dragging: DragTarget | null;
@@ -46,15 +46,31 @@ interface HandleSpec {
 // ---------------------------------------------------------------------------
 
 export function renderBezierSvg(props: BezierSvgProps) {
-  const { height: h, plotWidth: pw, plotHeight: ph, controls: c, dragging } = props;
+  const { height: h, plotWidth: pw, plotHeight: ph, controls: c, steps, dragging } = props;
 
   const toX = (n: number) => n * pw;
   const toY = (n: number) => n * ph;
-  const num = STEPS.length;
+  const num = steps.length;
+
+  // Smooth curve polyline — sampled points from t=0 to t=1
+  const SAMPLES = 100;
+  const curvePoints: string[] = [];
+  for (let i = 0; i <= SAMPLES; i++) {
+    const t = i / SAMPLES;
+    const cx = toX(t);
+    const cy = toY(bezierYAtX(t, c));
+    curvePoints.push(`${cx.toFixed(3)},${cy.toFixed(3)}`);
+  }
+  const curvePath = svg`
+    <polyline
+      points="${curvePoints.join(" ")}"
+      class="bezier-editor__step-path"
+    />
+  `;
 
   // Step diamonds — one per palette stop, centered in equal columns
   const halfStep = STEP_DIAMOND_SIZE / 2;
-  const stepDiamonds = STEPS.map((_step, i) => {
+  const stepDiamonds = steps.map((_step, i) => {
     const t = (i + 0.5) / num;
     const y = bezierYAtX(t, c);
     const cx = toX(t);
@@ -154,6 +170,7 @@ export function renderBezierSvg(props: BezierSvgProps) {
       </g>
 
       <g class="bezier-editor__steps">
+        ${curvePath}
         ${stepDiamonds}
       </g>
 
@@ -182,9 +199,10 @@ type OnKeyDown = (e: KeyboardEvent, which: DragTarget) => void;
 
 /** Unified handle — anchors and control points differ only by data, not markup. */
 function renderHandle(spec: HandleSpec, onPointerDown: OnPointerDown, onKeyDown: OnKeyDown) {
-  const { which, cx, cy, active, isAnchor, label, valueNow, valueText } = spec;
-  const activeMod = active ? " bezier-editor__handle--active" : "";
-  const dotActiveMod = active ? " bezier-editor__handle-dot--active" : "";
+  const { which, cx, cy, isAnchor, label, valueNow, valueText } = spec;
+  // JS-driven active classes kept as fallback — active state now handled by CSS :active
+  // const activeMod = active ? " bezier-editor__handle--active" : "";
+  // const dotActiveMod = active ? " bezier-editor__handle-dot--active" : "";
   const anchorMod = isAnchor ? " bezier-editor__handle--anchor" : "";
   const half = HANDLE_SIZE / 2;
   const halfDot = HANDLE_DOT_SIZE / 2;
@@ -208,13 +226,13 @@ function renderHandle(spec: HandleSpec, onPointerDown: OnPointerDown, onKeyDown:
         x="${cx - half}" y="${cy - half}"
         width="${HANDLE_SIZE}" height="${HANDLE_SIZE}"
         rx="2.5" ry="2.5"
-        class="bezier-editor__handle${anchorMod}${activeMod}"
+        class="bezier-editor__handle${anchorMod}"
       />
       <rect
         x="${cx - halfDot}" y="${cy - halfDot}"
         width="${HANDLE_DOT_SIZE}" height="${HANDLE_DOT_SIZE}"
         rx="1" ry="1"
-        class="bezier-editor__handle-dot${dotActiveMod}"
+        class="bezier-editor__handle-dot"
       />
     </g>
   `;

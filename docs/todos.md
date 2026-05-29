@@ -22,3 +22,11 @@ Point is, we'll need to allow naming the steps individually, but the amount of s
 # Lessen the need for knowledge about the inner workings of OKLCH
 
 We'll want to users to be able to efficiently use this tool without the nitty gritty details of OKLCH.
+
+---
+
+# Improve the math for origin into chroma curve.
+
+Could we do some better math?
+
+---

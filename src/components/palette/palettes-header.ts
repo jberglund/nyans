@@ -2,6 +2,7 @@ import { html, render } from "lit-html";
 import { live } from "lit-html/directives/live.js";
 import { store } from "../../state/store";
 import "../shared/number-slider";
+import { toolTip } from "../shared/tool-tip";
 import { linkedEditingTip, spreadTip } from "../shared/tool-tip-content";
 import type { State } from "../../state/types";
 
@@ -44,12 +45,12 @@ class PalettesHeader extends HTMLElement {
                 @change=${this.#onPropagateToggle}
               />
               <span class="label"
-                >Linked editing<tool-tip class="ml-2xs">${linkedEditingTip}</tool-tip></span
+                >Linked editing ${toolTip("linked-editing-tip", linkedEditingTip)}</span
               >
             </label>
 
             <label class=" inline-flex items-center gap-xs">
-              <span class="label">Spread<tool-tip class="ml-2xs">${spreadTip}</tool-tip></span>
+              <span class="label">Spread ${toolTip("spread-tip", spreadTip)}</span>
               <number-slider>
                 <input
                   id="spread-decay"

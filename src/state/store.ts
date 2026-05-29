@@ -1,5 +1,4 @@
 import {
-  STEPS,
   type State,
   type Step,
   type Curve,
@@ -23,8 +22,13 @@ const DEFAULT_PALETTES = [
 ] as const;
 
 /** Build a PaletteConfig from an origin — keeps chroma curve and origin in sync. */
-function makePalette(origin: Origin, name: string, lightness: Curve): PaletteConfig {
-  return { chroma: deriveChromaCurve(origin, lightness), origin, name };
+function makePalette(
+  origin: Origin,
+  name: string,
+  lightness: Curve,
+  steps: string[],
+): PaletteConfig {
+  return { chroma: deriveChromaCurve(origin, lightness, steps), origin, name };
 }
 
 export class Store {
@@ -41,6 +45,7 @@ export class Store {
    */
   constructor(state: State) {
     this.#state = structuredClone(state);
+    this.#buildStepIndex();
   }
 
   // --- readers ---
@@ -58,17 +63,26 @@ export class Store {
   /** Replace the bezier controls and re-derive the lightness curve and all chroma curves. */
   setBezierControls(controls: BezierControls): void {
     this.#state.bezierControls = { ...controls };
-    this.#state.lightness = bezierToCurve(controls);
+    this.#state.lightness = bezierToCurve(controls, this.#state.settings.steps);
     this.#recalculateAllChroma();
     this.#scheduleNotify();
   }
 
-  setChroma(paletteId: string, step: Step, value: number): void {
+  /** Replace the step grid — regenerates lightness curve and all chroma curves. */
+  setSteps(steps: string[]): void {
+    this.#state.settings.steps = steps;
+    this.#buildStepIndex();
+    this.#state.lightness = bezierToCurve(this.#state.bezierControls, steps);
+    this.#recalculateAllChroma();
+    this.#scheduleNotify();
+  }
+
+  setChroma(paletteId: string, step: Step, value: number, propagate?: boolean): void {
     const palette = this.#state.palettes[paletteId];
     if (!palette) return;
 
     const max = this.#state.settings.maxChroma;
-    if (this.#state.settings.propagateChanges) {
+    if (propagate ?? this.#state.settings.propagateChanges) {
       this.#propagate(palette.chroma, step, value, max);
     } else {
       palette.chroma[step] = snap(Math.max(0, Math.min(max, value)));
@@ -82,7 +96,7 @@ export class Store {
 
     const origin = { l, c, h };
     palette.origin = origin;
-    palette.chroma = deriveChromaCurve(origin, this.#state.lightness);
+    palette.chroma = deriveChromaCurve(origin, this.#state.lightness, this.#state.settings.steps);
     this.#scheduleNotify();
   }
 
@@ -108,7 +122,12 @@ export class Store {
   addDefaultPalette(): void {
     const tmpl = DEFAULT_PALETTES[0];
     const id = nextPaletteId(this.#state);
-    this.#state.palettes[id] = makePalette(tmpl.origin, id, this.#state.lightness);
+    this.#state.palettes[id] = makePalette(
+      tmpl.origin,
+      id,
+      this.#state.lightness,
+      this.#state.settings.steps,
+    );
     this.#notify();
   }
 
@@ -148,7 +167,8 @@ export class Store {
    */
   load(state: State): void {
     this.#state = structuredClone(state);
-    this.#state.lightness = bezierToCurve(this.#state.bezierControls);
+    this.#buildStepIndex();
+    this.#state.lightness = bezierToCurve(this.#state.bezierControls, this.#state.settings.steps);
     this.#recalculateAllChroma();
     this.#notify();
   }
@@ -168,8 +188,8 @@ export class Store {
 
   // --- internal ---
 
-  /** Pre-computed index lookup to avoid O(n) STEPS.indexOf on every slider drag. */
-  static #STEP_INDEX = Object.fromEntries(STEPS.map((s, i) => [s, i])) as Record<Step, number>;
+  /** Index lookup for the current steps, rebuilt when steps change. */
+  #stepIndex: Record<string, number> = {};
 
   /** Minimum sigma for the Gaussian — gives a small spread even at decay=0. */
   static #SIGMA_MIN = 0.3;
@@ -192,7 +212,7 @@ export class Store {
     const base = this.#propagationBase;
 
     const delta = newValue - base[step];
-    const changedIndex = Store.#STEP_INDEX[step];
+    const changedIndex = this.#stepIndex[step];
     const spread = this.#state.settings.propagateDecay;
 
     // Gaussian bell curve — creates a smooth bump centered on the dragged
@@ -201,8 +221,9 @@ export class Store {
     const sigma = Store.#SIGMA_MIN + spread * spread * Store.#SIGMA_SCALE;
     const twoSigmaSq = 2 * sigma * sigma;
 
-    for (let i = 0; i < STEPS.length; i++) {
-      const s = STEPS[i];
+    const steps = this.#state.settings.steps;
+    for (let i = 0; i < steps.length; i++) {
+      const s = steps[i];
       const distance = Math.abs(i - changedIndex);
       const weight = Math.exp(-(distance * distance) / twoSigmaSq);
       const val = base[s] + delta * weight;
@@ -213,7 +234,20 @@ export class Store {
   #deriveChromaFor(paletteId: string): void {
     const palette = this.#state.palettes[paletteId];
     if (!palette) return;
-    palette.chroma = deriveChromaCurve(palette.origin, this.#state.lightness);
+    palette.chroma = deriveChromaCurve(
+      palette.origin,
+      this.#state.lightness,
+      this.#state.settings.steps,
+    );
+  }
+
+  #buildStepIndex(): void {
+    const idx: Record<string, number> = {};
+    const steps = this.#state.settings.steps;
+    for (let i = 0; i < steps.length; i++) {
+      idx[steps[i]] = i;
+    }
+    this.#stepIndex = idx;
   }
 
   #recalculateAllChroma(): void {
@@ -253,17 +287,18 @@ export class Store {
 
   /** Create a store with the default palettes. */
   static default(): Store {
+    const settings = { ...DEFAULT_SETTINGS };
     const bezierControls = { ...BEZIER_PRESETS[0].controls };
-    const lightness = bezierToCurve(bezierControls);
+    const lightness = bezierToCurve(bezierControls, settings.steps);
     const palettes: Record<string, PaletteConfig> = {};
     for (const p of DEFAULT_PALETTES) {
-      palettes[p.id] = makePalette(p.origin, p.name, lightness);
+      palettes[p.id] = makePalette(p.origin, p.name, lightness, settings.steps);
     }
     return new Store({
       bezierControls,
       lightness,
       palettes,
-      settings: { ...DEFAULT_SETTINGS },
+      settings,
     });
   }
 }

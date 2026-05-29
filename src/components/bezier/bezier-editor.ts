@@ -1,5 +1,4 @@
 import { html, render } from "lit-html";
-import { STEPS } from "../../state";
 import {
   BEZIER_PRESETS,
   bezierToCurve,
@@ -44,6 +43,7 @@ class BezierEditor extends HTMLElement {
   #controls: BezierControls = { ...BEZIER_PRESETS[0].controls };
   #activePresetKey: string | null = BEZIER_PRESETS[0].key;
   #dragging: DragTarget | null = null;
+  #steps: string[] = [];
 
   #svgHeight = DEFAULT_HEIGHT;
   #actualWidth = 300;
@@ -122,10 +122,19 @@ class BezierEditor extends HTMLElement {
   }
 
   #onStoreChange = (state: State) => {
-    const next = state.bezierControls;
-    if (controlsEqual(next, this.#controls)) return;
-    this.#controls = { ...next };
-    this.#activePresetKey = findMatchingPreset(this.#controls);
+    const nextControls = state.bezierControls;
+    const nextSteps = state.settings.steps;
+    const controlsChanged = !controlsEqual(nextControls, this.#controls);
+    const stepsChanged = !stepsEqual(nextSteps, this.#steps);
+    if (!controlsChanged && !stepsChanged) return;
+
+    if (controlsChanged) {
+      this.#controls = { ...nextControls };
+      this.#activePresetKey = findMatchingPreset(this.#controls);
+    }
+    if (stepsChanged) {
+      this.#steps = nextSteps;
+    }
     this.#render();
   };
 
@@ -169,10 +178,11 @@ class BezierEditor extends HTMLElement {
   }
 
   #renderStepValues() {
-    const curve = bezierToCurve(this.#controls);
+    const steps = store.getState().settings.steps;
+    const curve = bezierToCurve(this.#controls, steps);
     return html`
       <div class="stack-horizontal justify-around mt-xs">
-        ${STEPS.map(
+        ${steps.map(
           (step) => html`
             <div class="bezier-editor__step-value">
               <span class="bezier-editor__step-value-label">${step}</span>
@@ -185,11 +195,13 @@ class BezierEditor extends HTMLElement {
   }
 
   #renderSvg() {
+    const steps = store.getState().settings.steps;
     return renderBezierSvg({
       height: this.#svgHeight,
       plotWidth: this.#actualWidth,
       plotHeight: this.#svgHeight,
       controls: this.#controls,
+      steps,
       startValue: this.#startL,
       endValue: this.#endL,
       dragging: this.#dragging,
@@ -315,6 +327,10 @@ function controlsEqual(a: BezierControls, b: BezierControls): boolean {
     a.p2y === b.p2y &&
     a.p3y === b.p3y
   );
+}
+
+function stepsEqual(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((s, i) => s === b[i]);
 }
 
 // -------------------------------------------------------------------

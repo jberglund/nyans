@@ -1,99 +1,24 @@
-import { html, render } from "lit-html";
+import { html } from "lit-html";
 
 /**
- * Inline info trigger. Click the `?` icon to reveal slotted content in a popover.
- *
- * Popover API handles light-dismiss and ESC for free.
- * CSS anchor positioning keeps the popover near the trigger.
+ * Returns a `?` button and anchored popover. The popover's `id` must be unique
+ * per page and is used to wire `popovertarget` ↔ `id`.
  *
  * Usage:
- *   <tool-tip>
- *     <p>Helpful context about this setting.</p>
- *   </tool-tip>
+ *   ${toolTip("my-tip", html`<p>Help text here.</p>`)}
  */
-class ToolTip extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    render(
-      html`
-        <style>
-          :host {
-            display: inline-flex;
-            vertical-align: middle;
-          }
-
-          .trigger {
-            appearance: none;
-            border: none;
-            background: none;
-            padding: 0;
-            font: inherit;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 1.2em;
-            height: 1.2em;
-            border-radius: 50%;
-            border: 1.5px solid currentColor;
-            color: var(--text-low);
-            font-size: 0.7em;
-            font-weight: 700;
-            line-height: 1;
-          }
-
-          .trigger:hover,
-          .trigger:focus-visible {
-            color: var(--text-mid);
-            background: var(--surface-overlay);
-          }
-
-          .popover {
-            border: 1px solid var(--border-default);
-            border-radius: 6px;
-            padding: 0.5rem 0.75rem;
-            max-width: 280px;
-            width: 100%;
-            font-size: 0.8rem;
-            font-weight: var(--font-weight-regular);
-            line-height: 1.5;
-            color: var(--text-high);
-            background: var(--surface-default);
-            box-shadow: var(--shadow-default);
-            margin: 0;
-            /* anchor positioning — progressive enhancement */
-            top: anchor(bottom);
-            left: anchor(center);
-            position-area: right bottom;
-            position-try-options: flip-block;
-          }
-
-          ::slotted(*) {
-            margin: 0;
-          }
-        </style>
-
-        <button
-          id="tt-trigger"
-          class="button trigger"
-          popovertarget="tip"
-          popovertargetaction="toggle"
-          aria-label="More info"
-        >
-          ?
-        </button>
-
-        <div id="tip" class="popover" popover role="tooltip" anchor="tt-trigger">
-          <slot></slot>
-        </div>
-      `,
-      this.shadowRoot!,
-    );
-  }
+export function toolTip(id: string, content: unknown) {
+  return html`
+    <button class="tt-trigger" popovertarget="${id}">
+      <svg class="tt-icon" viewBox="0 0 24 24"><use href="#icon-info"></use></svg>
+    </button>
+    <div
+      id="${id}"
+      class="tt-popover border-default surface-raised shadow-dialog mt-xs p-m br-m"
+      popover
+      role="tooltip"
+    >
+      ${content}
+    </div>
+  `;
 }
-
-customElements.define("tool-tip", ToolTip);

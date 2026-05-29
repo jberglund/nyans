@@ -1,7 +1,7 @@
 import {
   type State,
   type AppSettings,
-  STEPS,
+  DEFAULT_STEPS,
   type Curve,
   type BezierControls,
   type PaletteConfig,
@@ -20,6 +20,7 @@ import { bezierToCurve } from "./bezier";
 //   #b=15,750,55,250,760,800&p=primary:620,180,264:40,60,80,...:Primary;neutral:820,18,264:40,60,...:Neutral
 //
 // Keys:
+//   steps=<s0>,<s1>,...<sn>                   Step names (only if non-default)
 //   b=<p0y>,<p1x>,<p1y>,<p2x>,<p2y>,<p3y>   Bezier controls (×1000)
 //   p=<entries>                               Palettes, semicolon-delimited
 //   max-chroma=<int>                          Max chroma slider value (×1000, only if non-default)
@@ -44,21 +45,27 @@ function parseHashParams(): State | null {
 
   const params = new URLSearchParams(raw);
 
+  // --- steps ---
+  const steps = parseSteps(params);
+
   // --- lightness / bezier ---
-  const lightnessData = parseLightnessData(params);
+  const lightnessData = parseLightnessData(params, steps);
   if (!lightnessData) return null;
 
   // --- palettes ---
-  const palettes = parsePalettes(params);
+  const palettes = parsePalettes(params, steps);
   if (Object.keys(palettes).length === 0) return null;
 
   // --- settings ---
-  const settings = parseSettings(params);
+  const settings = parseSettings(params, steps);
 
   return { ...lightnessData, palettes, settings };
 }
 
-function parseLightnessData(params: URLSearchParams): {
+function parseLightnessData(
+  params: URLSearchParams,
+  steps: string[],
+): {
   bezierControls: BezierControls;
   lightness: Curve;
 } | null {
@@ -68,10 +75,10 @@ function parseLightnessData(params: URLSearchParams): {
   const bezierControls = parseBezierControls(bezierRaw);
   if (!bezierControls) return null;
 
-  return { bezierControls, lightness: bezierToCurve(bezierControls) };
+  return { bezierControls, lightness: bezierToCurve(bezierControls, steps) };
 }
 
-function parsePalettes(params: URLSearchParams): Record<string, PaletteConfig> {
+function parsePalettes(params: URLSearchParams, steps: string[]): Record<string, PaletteConfig> {
   const raw = params.get("p");
   if (!raw) return {};
 
@@ -82,7 +89,7 @@ function parsePalettes(params: URLSearchParams): Record<string, PaletteConfig> {
     if (!id || !originRaw || !chromaRaw) continue;
 
     const origin = parseOrigin(originRaw);
-    const chroma = parseCurve(chromaRaw);
+    const chroma = parseCurve(chromaRaw, steps);
     if (!origin || !chroma) continue;
 
     // name is the remainder joined back — URI-encoded so it won't
@@ -109,11 +116,18 @@ function syncToUrl(state: State): void {
     `b=${enc(c.p0y)},${enc(c.p1x)},${enc(c.p1y)},${enc(c.p2x)},${enc(c.p2y)},${enc(c.p3y)}`,
   ];
 
+  const steps = state.settings.steps;
+
+  // Steps — only write if non-default
+  if (!stepsEqual(steps, DEFAULT_STEPS)) {
+    parts.push(`steps=${steps.join(",")}`);
+  }
+
   const paletteEntries = Object.entries(state.palettes).map(([id, palette]) => {
     // l and c are fractional (0–1 range), need ×1000 for precision.
     // h is degrees (0–360), already an integer — no scaling needed.
     const origin = `${enc(palette.origin.l)},${enc(palette.origin.c)},${Math.round(palette.origin.h)}`;
-    const chroma = curveToString(palette.chroma);
+    const chroma = curveToString(palette.chroma, steps);
     const name = encodeURIComponent(palette.name);
     return `${id}:${origin}:${chroma}:${name}`;
   });
@@ -212,12 +226,12 @@ function parseBezierControls(raw: string): BezierControls | null {
   };
 }
 
-function parseCurve(raw: string): Curve | null {
+function parseCurve(raw: string, steps: string[]): Curve | null {
   const parts = raw.split(",").map(Number);
-  if (parts.length !== STEPS.length || parts.some((n) => !Number.isFinite(n))) return null;
+  if (parts.length !== steps.length || parts.some((n) => !Number.isFinite(n))) return null;
   const curve = {} as Curve;
-  for (let i = 0; i < STEPS.length; i++) {
-    curve[STEPS[i]] = dec(parts[i]);
+  for (let i = 0; i < steps.length; i++) {
+    curve[steps[i]] = dec(parts[i]);
   }
   return curve;
 }
@@ -230,7 +244,7 @@ function parseOrigin(raw: string): { l: number; c: number; h: number } | null {
   return { l: dec(l), c: dec(c), h: Math.round(h) };
 }
 
-function parseSettings(params: URLSearchParams): AppSettings {
+function parseSettings(params: URLSearchParams, steps: string[]): AppSettings {
   const maxChromaRaw = params.get("max-chroma");
   const ceilingRaw = params.get("ceiling");
 
@@ -247,6 +261,7 @@ function parseSettings(params: URLSearchParams): AppSettings {
       : DEFAULT_SETTINGS.ceilingGamut;
 
   return {
+    steps,
     maxChroma,
     ceilingGamut,
     propagateChanges: DEFAULT_SETTINGS.propagateChanges,
@@ -258,6 +273,18 @@ function parseSettings(params: URLSearchParams): AppSettings {
 // Helpers — serialize individual fields
 // ---------------------------------------------------------------------------
 
-function curveToString(curve: Curve): string {
-  return STEPS.map((s) => enc(curve[s])).join(",");
+function curveToString(curve: Curve, steps: string[]): string {
+  return steps.map((s) => enc(curve[s])).join(",");
+}
+
+function parseSteps(params: URLSearchParams): string[] {
+  const raw = params.get("steps");
+  if (!raw) return [...DEFAULT_STEPS];
+  const steps = raw.split(",").filter(Boolean);
+  if (steps.length === 0) return [...DEFAULT_STEPS];
+  return steps;
+}
+
+function stepsEqual(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((s, i) => s === b[i]);
 }

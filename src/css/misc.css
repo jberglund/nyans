@@ -6,3 +6,19 @@
 .overlap > :where(*) {
   grid-area: 1 / 1;
 }
+
+.br-inherit {
+  border-radius: inherit;
+}
+.br-s {
+  border-radius: 4px;
+}
+.br-m {
+  border-radius: 6px;
+}
+.br-l {
+  border-radius: 8px;
+}
+.br-xl {
+  border-radius: 12px;
+}

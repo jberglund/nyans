@@ -50,6 +50,15 @@
   stroke-dasharray: 2 2;
 }
 
+/* Polyline connecting step diamonds */
+.bezier-editor__step-path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-opacity: 0.1;
+  stroke-linejoin: round;
+}
+
 /* Step diamonds */
 .bezier-editor__step-diamond {
   fill: var(--accent);
@@ -95,6 +104,21 @@
   fill: var(--accent);
 }
 
+/* Active state via CSS pseudo-class (JS class fallback kept above) */
+.bezier-editor__handle-group:active .bezier-editor__handle {
+  fill: var(--accent);
+}
+
+.bezier-editor__handle-group:active .bezier-editor__handle-dot {
+  fill: var(--surface-default);
+  filter: drop-shadow(0 0 6px var(--accent));
+}
+/* Focus ring for keyboard-navigable handle groups */
+.bezier-editor__handle-group:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
 /* Inner diamond of the draggable handle */
 .bezier-editor__handle-dot {
   fill: var(--accent);
@@ -102,14 +126,9 @@
   transition: fill 0.15s ease;
 }
 
-.bezier-editor__handle-dot--active {
+.bezier-editor__handle-group:focus-visible .bezier-editor__handle-dot {
   fill: var(--surface-default);
-}
-
-/* Focus ring for keyboard-navigable handle groups */
-.bezier-editor__handle-group:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
+  filter: drop-shadow(0 0 6px var(--accent));
 }
 
 /* Value labels beside anchor handles */

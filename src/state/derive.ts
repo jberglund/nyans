@@ -1,5 +1,7 @@
 import Color from "colorjs.io";
-import { type State, STEPS, type Step, type Curve } from "./types";
+import { type State, type Step, type Curve } from "./types";
+
+export type GamutClass = "srgb" | "p3" | "rec2020" | "rec2020+";
 
 export interface Swatch {
   step: Step;
@@ -8,6 +10,8 @@ export interface Swatch {
   l: number;
   c: number;
   h: number;
+  /** Narrowest gamut this swatch fits in. "rec2020+" means it exceeds Rec.2020. */
+  gamut: GamutClass;
 }
 
 /**
@@ -20,12 +24,14 @@ export function deriveSwatches(state: State, paletteId: string): Swatch[] {
   const palette = state.palettes[paletteId];
   if (!palette) return [];
 
-  return STEPS.map((step) => {
+  const steps = state.settings.steps;
+  return steps.map((step) => {
     const l = state.lightness[step];
     const c = palette.chroma[step];
     const h = palette.origin.h;
 
-    return { step, l, c, h, css: `oklch(${l} ${c} ${h})` };
+    const gamut = classifyGamut(l, c, h);
+    return { step, l, c, h, css: `oklch(${l} ${c} ${h})`, gamut };
   });
 }
 
@@ -55,12 +61,13 @@ const DERIVATION_GAMUT = "srgb";
 export function deriveChromaCurve(
   origin: { l: number; c: number; h: number },
   lightness: Curve,
+  steps: string[],
 ): Curve {
   const maxOriginC = maxInGamutChroma(origin.l, origin.h, DERIVATION_GAMUT);
   const fillRatio = maxOriginC > 0 ? clamp01(origin.c / maxOriginC) : 0;
 
   const result = {} as Curve;
-  for (const step of STEPS) {
+  for (const step of steps) {
     const l = lightness[step];
     const ceiling = maxInGamutChroma(l, origin.h, DERIVATION_GAMUT);
     result[step] = snap(ceiling * fillRatio);
@@ -118,6 +125,19 @@ function memoize<A extends unknown[], R>(fn: (...args: A) => R, max = 600): (...
 // ---------------------------------------------------------------------------
 // Gamut helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Classify which gamut a color falls in, from narrowest to widest.
+ * Returns "rec2020+" if it exceeds even Rec.2020.
+ */
+function _classifyGamut(l: number, c: number, h: number): GamutClass {
+  if (isInGamut(l, c, h, "srgb")) return "srgb";
+  if (isInGamut(l, c, h, "p3")) return "p3";
+  if (isInGamut(l, c, h, "rec2020")) return "rec2020";
+  return "rec2020+";
+}
+
+const classifyGamut = memoize(_classifyGamut);
 
 /**
  * Check whether a given LCH color is in gamut, silently treating exceptions

@@ -88,7 +88,7 @@
 :where(.typeset) dl {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: var(--spacing-s) var(--spacing-xl);
+  gap: var(--spacing-s) var(--spacing-m);
   align-items: baseline;
 }
 

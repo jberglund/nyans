@@ -26,7 +26,18 @@ export function getCurrentTheme(): Theme {
 export function toggleTheme(): Theme {
   const next = resolveTheme() === "dark" ? "light" : "dark";
   localStorage.setItem(STORAGE_KEY, next);
+
+  const root = document.documentElement;
+  root.classList.add("no-transition");
+
   applyTheme(next);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      root.classList.remove("no-transition");
+    });
+  });
+
   return next;
 }
 

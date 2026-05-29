@@ -8,7 +8,7 @@ import "./components/palette/palette-toolbar";
 import "./components/palette/palettes-header";
 import "./components/palette/palettes-footer";
 import "./components/palette/export-dialog";
-import "./components/shared/tool-tip";
+
 import { initHotkeys } from "./utils/hotkey";
 import { initUrlSync } from "./state";
 import { store } from "./state/store";

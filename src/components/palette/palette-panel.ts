@@ -1,6 +1,6 @@
 import { html, render } from "lit-html";
 import { store } from "../../state/store";
-import { STEPS, deriveSwatches, maxInGamutChroma, type Step } from "../../state";
+import { deriveSwatches, maxInGamutChroma, type Step } from "../../state";
 import type { State, PaletteConfig } from "../../state/types";
 import "../shared/step-slider";
 import "./palette-origin";
@@ -21,17 +21,22 @@ class PalettePanel extends HTMLElement {
 
   #paletteId = "p1";
   #unsub: (() => void) | null = null;
+  #shiftHeld = false;
 
   connectedCallback() {
     this.#paletteId = this.getAttribute("palette-id") ?? "p1";
     this.addEventListener("step-change", this.#onStepChange);
     this.addEventListener("origin-change", this.#onOriginChange);
+    document.addEventListener("keydown", this.#onKeyDown);
+    document.addEventListener("keyup", this.#onKeyUp);
     this.#render();
     this.#unsub = store.subscribe(this.#onStoreChange);
   }
 
   disconnectedCallback() {
     this.#unsub?.();
+    document.removeEventListener("keydown", this.#onKeyDown);
+    document.removeEventListener("keyup", this.#onKeyUp);
   }
 
   // -----------------------------------------------------------------------
@@ -43,7 +48,7 @@ class PalettePanel extends HTMLElement {
     const palette = state.palettes[this.#paletteId];
     if (!palette) return;
 
-    const { maxChroma: sliderMax, ceilingGamut } = state.settings;
+    const { maxChroma: sliderMax, ceilingGamut, steps } = state.settings;
     const paletteCount = Object.keys(state.palettes).length;
     const swatches = deriveSwatches(state, this.#paletteId);
 
@@ -93,12 +98,15 @@ class PalettePanel extends HTMLElement {
                 (swatch) => html`
                   <div class="palette-swatch" style="background-color: ${swatch.css}">
                     <span hidden class="swatch-label">${swatch.step}</span>
+                    ${swatch.gamut !== "srgb"
+                      ? html`<span class="swatch-gamut-badge">${swatch.gamut}</span>`
+                      : ""}
                   </div>
                 `,
               )}
             </div>
             <div class="palette-grid" data-editor="chroma">
-              ${STEPS.map((step) => {
+              ${steps.map((step) => {
                 const L = state.lightness[step];
                 const ceiling = maxInGamutChroma(L, palette.origin.h, ceilingGamut);
                 return html`
@@ -132,9 +140,22 @@ class PalettePanel extends HTMLElement {
   // Event handlers
   // -----------------------------------------------------------------------
 
+  #onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Shift" && !e.repeat) {
+      this.#shiftHeld = true;
+    }
+  };
+
+  #onKeyUp = (e: KeyboardEvent) => {
+    if (e.key === "Shift") {
+      this.#shiftHeld = false;
+    }
+  };
+
   #onStepChange = (e: Event) => {
     const { step, value } = (e as CustomEvent<{ step: Step; value: number }>).detail;
-    store.setChroma(this.#paletteId, step, value);
+    const { propagateChanges } = store.getState().settings;
+    store.setChroma(this.#paletteId, step, value, propagateChanges !== this.#shiftHeld);
   };
 
   #onOriginChange = (e: Event) => {

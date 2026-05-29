@@ -41,7 +41,7 @@
 
 #app {
   display: grid;
-  gap: 6rem;
+  gap: 2rem;
   padding: 1rem;
   max-width: min(1200px, 100svw);
   margin-inline: auto;
@@ -73,12 +73,16 @@
   background: var(--surface-default);
   color: var(--text-mid);
 }
-
+number-slider {
+  display: contents;
+}
 :where([popover]) {
+  transition-behavior: allow-discrete;
   transition:
-    opacity 0.2s,
-    transform 0.2s,
-    display 0.2s allow-discrete;
+    opacity 0.15s,
+    transform 0.15s,
+    overlay 0.15s allow-discrete,
+    display 0.15s allow-discrete;
   transition-timing-function: ease-out;
   opacity: 0;
   transform: translateY(0.25rem);
@@ -90,11 +94,61 @@
     @starting-style {
       & {
         opacity: 0;
-        transform: translateY(0.5rem);
+        transform: translateY(0.25rem);
         scale: 0.98;
       }
     }
   }
+}
+@supports (position-area: end) {
+  :where([popover]) {
+    position-area: end span-end;
+    position-try-fallbacks:
+      flip-block,
+      flip-inline,
+      flip-block flip-inline;
+  }
+}
+@supports not (position-area: end) {
+  :where([popover]) {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: fit-content;
+    height: fit-content;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Tool-tip (“?” button + popover)                                       */
+/* ------------------------------------------------------------------ */
+
+.tt-trigger {
+  all: initial;
+  appearance: none;
+  display: inline-flex;
+  align-self: baseline;
+  vertical-align: baseline;
+  color: var(--text-low);
+  width: 1lh;
+  height: 1lh;
+  place-items: center;
+}
+
+.tt-trigger:hover,
+.tt-trigger:focus-visible {
+  color: var(--text-mid);
+}
+
+.tt-icon {
+  width: var(--spacing-s);
+  height: var(--spacing-s);
+  color: currentColor;
+}
+
+.tt-popover {
+  max-width: 280px;
+  min-width: 200px;
 }
 
 .palette-grid {
@@ -133,6 +187,22 @@ step-slider:not(:last-child) {
 
 .palette-swatch {
   height: 8rem;
+  position: relative;
+}
+
+.swatch-gamut-badge {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: oklch(0 0 0 / 0.55);
+  color: oklch(1 0 0);
+  pointer-events: none;
+  user-select: none;
 }
 
 /* ------------------------------------------------------------------ */
@@ -163,9 +233,7 @@ step-slider:not(:last-child) {
   border-radius: 8px;
   max-width: 640px;
   width: 92vw;
-  left: auto;
-  right: 0;
-  margin-right: var(--spacing-m);
+  margin: var(--spacing-m);
 }
 
 .export-dialog::backdrop {
@@ -183,4 +251,9 @@ step-slider:not(:last-child) {
   resize: vertical;
   tab-size: 2;
   width: 100%;
+}
+
+.no-transition,
+.no-transition * {
+  transition: none !important;
 }

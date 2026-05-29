@@ -1,5 +1,5 @@
-/** The 20 lightness/chroma stops that define a curve. */
-export const STEPS = [
+/** The default 20 lightness/chroma stops. */
+export const DEFAULT_STEPS = [
   "0",
   "50",
   "100",
@@ -20,9 +20,9 @@ export const STEPS = [
   "850",
   "900",
   "950",
-] as const;
+];
 
-export type Step = (typeof STEPS)[number];
+export type Step = string;
 
 /** A curve maps each step to a numeric value. */
 export type Curve = Record<Step, number>;
@@ -43,6 +43,8 @@ export interface PaletteConfig {
 
 /** Global app settings that affect all palettes. */
 export interface AppSettings {
+  /** The step keys that define the curve grid (e.g. ["0", "100", "200", ...]). */
+  steps: string[];
   /** Slider max for chroma step-sliders. */
   maxChroma: number;
   /** Gamut used for the ceiling / danger-zone on chroma sliders. */
@@ -55,6 +57,7 @@ export interface AppSettings {
 
 /** Default app settings — single source of truth for initial values. */
 export const DEFAULT_SETTINGS: AppSettings = {
+  steps: [...DEFAULT_STEPS],
   maxChroma: 0.35,
   ceilingGamut: "p3",
   propagateChanges: true,
@@ -83,7 +86,7 @@ export type DragTarget = "p0" | "p1" | "p2" | "p3";
 export interface State {
   /** Bezier curve controls — the source of truth for the lightness curve. */
   bezierControls: BezierControls;
-  /** Derived 20-step lightness values (computed from bezierControls). */
+  /** Derived lightness values (computed from bezierControls). */
   lightness: Curve;
   palettes: Record<string, PaletteConfig>;
   settings: AppSettings;

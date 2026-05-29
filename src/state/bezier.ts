@@ -1,4 +1,4 @@
-import { STEPS, type Curve, type BezierControls } from "./types";
+import { type Curve, type BezierControls } from "./types";
 import { snap } from "./derive";
 
 // ---------------------------------------------------------------------------
@@ -89,12 +89,12 @@ function bezierTAtXBinary(x: number, p1x: number, p2x: number): number {
  * The plot y-axis maps directly to lightness: y=0 is bright (L=1),
  * y=1 is dark (L=0).  So lightness = 1 − bezierYAtX(x).
  */
-export function bezierToCurve(c: BezierControls): Curve {
+export function bezierToCurve(c: BezierControls, steps: string[]): Curve {
   const curve = {} as Curve;
-  const n = STEPS.length - 1;
-  for (let i = 0; i < STEPS.length; i++) {
+  const n = steps.length - 1;
+  for (let i = 0; i < steps.length; i++) {
     const y = bezierYAtX(i / n, c);
-    curve[STEPS[i]] = snap(1 - y);
+    curve[steps[i]] = snap(1 - y);
   }
   return curve;
 }

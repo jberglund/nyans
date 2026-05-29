@@ -3,8 +3,10 @@ import { live } from "lit-html/directives/live.js";
 import { store } from "../../state/store";
 import "../shared/number-slider";
 import { openExportDialog } from "./export-dialog";
+import { toolTip } from "../shared/tool-tip";
 import { maxChromaTip, ceilingTip } from "../shared/tool-tip-content";
 import { getCurrentTheme, toggleTheme } from "../../theme";
+import { DEFAULT_STEPS } from "../../state";
 import type { State, AppSettings } from "../../state/types";
 
 const CEILING_OPTIONS = [
@@ -18,6 +20,8 @@ const CEILING_OPTIONS = [
  */
 class PaletteToolbar extends HTMLElement {
   #unsub: (() => void) | null = null;
+  #stepsDraft: string | null = null;
+  #stepsError: string | null = null;
 
   connectedCallback() {
     this.#render();
@@ -58,42 +62,79 @@ class PaletteToolbar extends HTMLElement {
             <svg class="icon" viewBox="0 0 24 24"><use href="#icon-advanced" /></svg>
             Advanced
           </button>
-        </div>
+          <div
+            id="advanced-popover"
+            class="advanced-popover border-default surface-raised shadow-dialog mt-xs"
+            popover="auto"
+          >
+            <div class="stack gap-s p-m ">
+              <label class="p-2xs stack-horizontal items-center gap-xs  surface-raised">
+                <span class="label mr-auto"
+                  >Max chroma ${toolTip("max-chroma-tip", maxChromaTip)}</span
+                >
+                <number-slider>
+                  <input
+                    id="max-chroma"
+                    class="input t-right"
+                    style="width: 10ch;"
+                    type="number"
+                    min="0.2"
+                    max="0.4"
+                    step="0.01"
+                    .value=${live(String(settings.maxChroma))}
+                    @input=${this.#onMaxChromaInput}
+                  />
+                </number-slider>
+              </label>
 
-        <div
-          id="advanced-popover"
-          class="advanced-popover border-default surface-raised shadow-dialog m-0"
-          popover="auto"
-        >
-          <div class="stack gap-s p-m">
-            <label class="p-2xs inline-flex items-center gap-xs fs-s surface-raised border-default">
-              <span class="label">Max chroma<tool-tip>${maxChromaTip}</tool-tip></span>
-              <number-slider>
-                <input
-                  id="max-chroma"
-                  class="input"
-                  type="number"
-                  min="0.2"
-                  max="0.4"
-                  step="0.01"
-                  .value=${live(String(settings.maxChroma))}
-                  @input=${this.#onMaxChromaInput}
-                />
-              </number-slider>
-            </label>
+              <div class="p-2xs surface-raised ">
+                <span class="label fs-s"
+                  >Target colorspace ${toolTip("target-colorspace-tip", ceilingTip)}</span
+                >
+                <div class="stack-horizontal gap-m mt-xs">
+                  ${CEILING_OPTIONS.map(
+                    (opt) => html`
+                      <label class="stack-horizontal gap-2xs fs-xs" style="cursor: pointer;">
+                        <input
+                          type="radio"
+                          class="radio"
+                          name="ceilingGamut"
+                          value="${opt.value}"
+                          .checked=${settings.ceilingGamut === opt.value}
+                          @change=${this.#onCeilingChange}
+                        />
+                        ${opt.label}
+                      </label>
+                    `,
+                  )}
+                </div>
+              </div>
 
-            <label class="p-2xs inline-flex items-center gap-xs fs-s surface-raised border-default">
-              <span class="label">Target colorspace<tool-tip>${ceilingTip}</tool-tip></span>
-              <select .value=${settings.ceilingGamut} @change=${this.#onCeilingChange}>
-                ${CEILING_OPTIONS.map(
-                  (opt) => html`
-                    <option value="${opt.value}" ?selected=${settings.ceilingGamut === opt.value}>
-                      ${opt.label}
-                    </option>
-                  `,
-                )}
-              </select>
-            </label>
+              <div class="stack gap-2xs p-2xs surface-raised ">
+                <span class="label fs-s">Steps</span>
+                <div class="stack-horizontal gap-xs items-start">
+                  <input
+                    class="input flex-1 fs-xs"
+                    type="text"
+                    placeholder="0,100,200,300,400"
+                    .value=${this.#stepsDraft ?? settings.steps.join(",")}
+                    @input=${this.#onStepsInput}
+                    @keydown=${this.#onStepsKeydown}
+                  />
+                </div>
+                <div class="stack-horizontal gap-xs">
+                  <button class="button " @click=${this.#onStepsReset}>Reset</button>
+                  <button class="button flex-1" @click=${this.#onStepsSave}>Save</button>
+                </div>
+                ${this.#stepsError
+                  ? html`<span class="fs-xs" style="color: var(--gamut-warning)"
+                      >${this.#stepsError}</span
+                    >`
+                  : html`<span class="fs-xs text-low"
+                      >Comma-separated step names. ${settings.steps.length} steps currently.</span
+                    >`}
+              </div>
+            </div>
           </div>
         </div>
       `,
@@ -113,8 +154,59 @@ class PaletteToolbar extends HTMLElement {
   };
 
   #onCeilingChange = (e: Event) => {
-    const value = (e.target as HTMLSelectElement).value as AppSettings["ceilingGamut"];
+    const value = (e.target as HTMLInputElement).value as AppSettings["ceilingGamut"];
     store.setCeilingGamut(value);
+  };
+
+  // --- Steps ---
+
+  #onStepsInput = (e: Event) => {
+    this.#stepsDraft = (e.target as HTMLInputElement).value;
+    this.#stepsError = null;
+  };
+
+  #onStepsKeydown = (e: KeyboardEvent) => {
+    if (e.key === "Enter") this.#onStepsSave();
+    if (e.key === "Escape") {
+      this.#stepsDraft = null;
+      this.#stepsError = null;
+      this.#render();
+    }
+  };
+
+  #onStepsSave = () => {
+    const raw = this.#stepsDraft;
+    if (raw === null) return;
+
+    const steps = raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (steps.length < 2) {
+      this.#stepsError = "Need at least 2 steps.";
+      this.#render();
+      return;
+    }
+
+    const seen = new Set<string>();
+    for (const s of steps) {
+      if (seen.has(s)) {
+        this.#stepsError = `Duplicate step: "${s}".`;
+        this.#render();
+        return;
+      }
+      seen.add(s);
+    }
+
+    this.#stepsDraft = null;
+    this.#stepsError = null;
+    store.setSteps(steps);
+  };
+
+  #onStepsReset = () => {
+    this.#stepsDraft = null;
+    this.#stepsError = null;
+    store.setSteps([...DEFAULT_STEPS]);
   };
 }
 
