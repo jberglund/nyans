@@ -31,6 +31,11 @@ Structure:
 
 This is vanilla Typescript app/SPA (not React or the like) for generating color palettes. OKLCH is the load-bearing technology and we're using the color.js library to help us do the color math.
 
+## How to do styling
+
+Before writing custom CSS, use the utility classes. See `docs/styling.md` for more information.
+If no applicable utilities exists, ask yourself if an inline style is OK or if a custom rule is needed.
+
 <!--VITE PLUS START-->
 
 # Using Vite+, the Unified Toolchain for the Web
