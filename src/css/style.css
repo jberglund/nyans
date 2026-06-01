@@ -273,37 +273,39 @@ step-slider:not(:last-child) {
 /* ------------------------------------------------------------------ */
 
 .palettes-preview {
+  place-self: center;
 }
 
-.palette-preview-grid {
+.palettes-preview__body {
+  width: calc(100vw - (var(--spacing-m) * 2));
+  height: 90svh;
   display: grid;
-  grid-auto-columns: 1fr;
-  grid-auto-flow: column;
-  border-radius: 8px;
-  overflow: clip;
-  flex: 1;
-  min-height: 160px;
 }
 
-.palette-preview-swatch {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.palettes-preview-head,
+.palettes-preview-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
 }
 
-.palette-preview-label {
-  font-size: var(--font-size-s);
-  font-weight: var(--font-weight-bold);
-  color: white;
-  background: oklch(0 0 0 / 0.5);
-  padding: 2px 8px;
-  border-radius: 4px;
-  pointer-events: none;
+.palettes-preview-header {
   user-select: none;
+}
+
+.palettes-preview-name {
+  white-space: nowrap;
+}
+
+.grayscale .palettes-preview-swatch {
+  filter: grayscale(1);
 }
 
 .no-transition,
 .no-transition * {
   transition: none !important;
+}
+
+.grayscale {
+  filter: grayscale(100%);
 }
