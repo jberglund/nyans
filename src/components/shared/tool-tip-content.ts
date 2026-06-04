@@ -75,13 +75,13 @@ export const presetTip = html`
       Jump-start your curve with a preset shape. You can still tweak handles and endpoints after.
     </p>
     <dl>
-      <dt>S-curve</dt>
+      <dt>Balanced</dt>
       <dd>gentle contrast, most natural</dd>
       <dt>Linear</dt>
       <dd>even steps from light to dark</dd>
-      <dt>Bright / Dark</dt>
-      <dd>biased toward one end</dd>
-      <dt>Flat</dt>
+      <dt>Bright</dt>
+      <dd>biased toward light end</dd>
+      <dt>Midtone</dt>
       <dd>narrow range, low contrast</dd>
     </dl>
   </div>

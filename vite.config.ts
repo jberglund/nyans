@@ -1,7 +1,7 @@
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
-  base: "/farve/",
+  base: "/nyans/",
   staged: {
     "*": "vp check --fix",
   },

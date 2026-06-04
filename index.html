@@ -4,10 +4,33 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>farve</title>
+    <title>Nyans — A color palette generator based on OKLCH</title>
+    <meta
+      name="description"
+      content="Create beautiful, accessible color palettes powered by OKLCH color space."
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Nyans — A color palette generator based on OKLCH" />
+    <meta
+      property="og:description"
+      content="Create beautiful, accessible color palettes powered by OKLCH color space."
+    />
+    <meta property="og:image" content="https://farve.co/og-image.svg" />
+    <meta property="og:url" content="https://farve.co" />
+    <meta property="og:type" content="website" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Nyans — A color palette generator based on OKLCH" />
+    <meta
+      name="twitter:description"
+      content="Create beautiful, accessible color palettes powered by OKLCH color space."
+    />
+    <meta name="twitter:image" content="https://farve.co/og-image.svg" />
     <script>
       (function () {
-        var t = localStorage.getItem("farve-theme");
+        var t = localStorage.getItem("nyans-theme");
         if (t === "dark" || (!t && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
           document.documentElement.setAttribute("data-theme", "dark");
         }

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#f7f8fa"/>
+
+  <!-- Blue palette swatches -->
+  <rect x="45"  y="80"  width="150" height="470" rx="8" fill="#e8f0fe"/>
+  <rect x="207" y="50"  width="150" height="530" rx="8" fill="#c4d9f7"/>
+  <rect x="369" y="25"  width="150" height="580" rx="8" fill="#92bdf0"/>
+  <rect x="531" y="10"  width="150" height="610" rx="8" fill="#5e9ee5"/>
+  <rect x="693" y="25"  width="150" height="580" rx="8" fill="#3b7ed4"/>
+  <rect x="855" y="50"  width="150" height="530" rx="8" fill="#2563b0"/>
+  <rect x="1017" y="80"  width="150" height="470" rx="8" fill="#1a4580"/>
+</svg>

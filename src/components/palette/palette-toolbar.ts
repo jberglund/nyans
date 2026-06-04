@@ -41,7 +41,7 @@ class PaletteToolbar extends HTMLElement {
     render(
       html`
         <div class="stack-horizontal gap-m items-stretch py-xl">
-          <a href="/farve/" style="text-decoration: none;" class="fs-m mr-auto text-mid"
+          <a href="/nyans/" style="text-decoration: none;" class="fs-m mr-auto text-mid"
             >A color palette generator</a
           >
           <div class="stack-horizontal gap-xs">
