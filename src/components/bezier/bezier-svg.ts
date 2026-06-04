@@ -8,6 +8,7 @@ import { bezierYAtX } from "../../state/bezier";
 
 const HANDLE_SIZE = 12;
 const HANDLE_DOT_SIZE = 4;
+const HANDLE_HIT_RADIUS = 22;
 const STEP_DIAMOND_SIZE = 8;
 const H_GRID_LINES = 4;
 
@@ -199,17 +200,16 @@ type OnKeyDown = (e: KeyboardEvent, which: DragTarget) => void;
 
 /** Unified handle — anchors and control points differ only by data, not markup. */
 function renderHandle(spec: HandleSpec, onPointerDown: OnPointerDown, onKeyDown: OnKeyDown) {
-  const { which, cx, cy, isAnchor, label, valueNow, valueText } = spec;
-  // JS-driven active classes kept as fallback — active state now handled by CSS :active
-  // const activeMod = active ? " bezier-editor__handle--active" : "";
-  // const dotActiveMod = active ? " bezier-editor__handle-dot--active" : "";
+  const { which, cx, cy, active, isAnchor, label, valueNow, valueText } = spec;
+  const activeMod = active ? " bezier-editor__handle--active" : "";
+  const dotActiveMod = active ? " bezier-editor__handle-dot--active" : "";
   const anchorMod = isAnchor ? " bezier-editor__handle--anchor" : "";
   const half = HANDLE_SIZE / 2;
   const halfDot = HANDLE_DOT_SIZE / 2;
 
   return svg`
     <g
-      class="bezier-editor__handle-group"
+      class="bezier-editor__handle-group${anchorMod}"
       transform="rotate(45 ${cx} ${cy})"
       tabindex="0"
       role="slider"
@@ -222,17 +222,23 @@ function renderHandle(spec: HandleSpec, onPointerDown: OnPointerDown, onKeyDown:
       @keydown=${(e: KeyboardEvent) => onKeyDown(e, which)}
       @pointerdown=${(e: PointerEvent) => onPointerDown(e, which)}
     >
+      <!-- Transparent hit area — large enough for fat fingers (44px diameter) -->
+      <circle
+        cx="${cx}" cy="${cy}"
+        r="${HANDLE_HIT_RADIUS}"
+        class="bezier-editor__handle-hit"
+      />
       <rect
         x="${cx - half}" y="${cy - half}"
         width="${HANDLE_SIZE}" height="${HANDLE_SIZE}"
         rx="2.5" ry="2.5"
-        class="bezier-editor__handle${anchorMod}"
+        class="bezier-editor__handle${activeMod}"
       />
       <rect
         x="${cx - halfDot}" y="${cy - halfDot}"
         width="${HANDLE_DOT_SIZE}" height="${HANDLE_DOT_SIZE}"
         rx="1" ry="1"
-        class="bezier-editor__handle-dot"
+        class="bezier-editor__handle-dot${dotActiveMod}"
       />
     </g>
   `;

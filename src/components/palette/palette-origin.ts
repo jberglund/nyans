@@ -62,6 +62,7 @@ class PaletteOrigin extends HTMLElement {
               ></label>
               <input
                 type="color"
+                class="origin-color-input"
                 .value=${live(hex)}
                 id="origin-${this.#paletteId}"
                 name="origin"

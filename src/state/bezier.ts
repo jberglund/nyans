@@ -122,28 +122,24 @@ export function findMatchingPreset(c: BezierControls): string | null {
 
 export const BEZIER_PRESETS: { key: string; label: string; controls: BezierControls }[] = [
   {
-    key: "s-curve",
-    label: "S-curve",
-    controls: { p0y: 0.015, p1x: 0.75, p1y: 0.055, p2x: 0.25, p2y: 0.76, p3y: 0.8 },
+    key: "balanced",
+    label: "Balanced",
+    controls: { p0y: 0.015, p1x: 0.25, p1y: 0.055, p2x: 0.75, p2y: 0.76, p3y: 0.8 },
   },
   {
     key: "linear",
     label: "Linear",
-    controls: { p0y: 0, p1x: 0.25, p1y: 0.25, p2x: 0.75, p2y: 0.75, p3y: 1 },
+    controls: { p0y: 0, p1x: 0.25, p1y: 0.2, p2x: 0.75, p2y: 0.6, p3y: 0.8 },
   },
   {
     key: "bright",
     label: "Bright",
-    controls: { p0y: 0, p1x: 0.5, p1y: 0.0, p2x: 0.8, p2y: 0.7, p3y: 1 },
+    controls: { p0y: 0, p1x: 0.5, p1y: 0.0, p2x: 0.8, p2y: 0.7, p3y: 0.8 },
   },
+
   {
-    key: "dark",
-    label: "Dark",
-    controls: { p0y: 0, p1x: 0.2, p1y: 0.8, p2x: 0.5, p2y: 1.0, p3y: 1 },
-  },
-  {
-    key: "flat",
-    label: "Flat",
-    controls: { p0y: 0, p1x: 0.3, p1y: 0.471, p2x: 0.7, p2y: 0.471, p3y: 1 },
+    key: "midtone",
+    label: "Midtone",
+    controls: { p0y: 0, p1x: 0.3, p1y: 0.471, p2x: 0.7, p2y: 0.471, p3y: 0.8 },
   },
 ];

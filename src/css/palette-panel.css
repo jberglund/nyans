@@ -177,11 +177,22 @@ step-slider:not(:last-child) {
 /* Origin swatch — clickable preview that opens the hidden color picker */
 .origin-swatch {
   width: 1rem;
-  margin: var(--spacing-xs);
+  margin: auto var(--spacing-xs);
   border-radius: 4px;
+  height: 1rem;
   border: none;
   cursor: pointer;
+  z-index: 1;
+}
+
+/* Hidden color input — sits above the swatch so taps work on iOS */
+.origin-color-input {
+  opacity: 0;
   z-index: 10;
+  cursor: pointer;
+  justify-self: start;
+  width: 2rem;
+  height: 100%;
 }
 
 /* ------------------------------------------------------------------ */

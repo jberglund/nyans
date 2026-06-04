@@ -38,8 +38,12 @@
   }
 }
 
+.bezier-editor__handle-group {
+  outline: none;
+}
+
 /* Draggable diamond handle for P0 / P3 (anchor endpoints, vertical-only) */
-.bezier-editor__handle--anchor {
+.bezier-editor__handle-group.bezier-editor__handle--anchor .bezier-editor__handle-hit {
   cursor: ns-resize;
 }
 
@@ -91,32 +95,32 @@
   font-family: var(--font-mono, monospace);
 }
 
+/* Transparent hit area — enlarged touch target for mobile */
+.bezier-editor__handle-hit {
+  fill: transparent;
+  pointer-events: all;
+  cursor: move;
+}
+
 /* Draggable handle (P1 / P2) — diamond (rotated square) */
 .bezier-editor__handle {
   stroke: var(--accent);
   stroke-width: 2;
-  cursor: grab;
   fill: var(--surface-default);
+  pointer-events: none;
   transition: fill 0.15s ease;
 }
 
+/* Active/focused state — keyboard focus and drag both light up the handle */
+.bezier-editor__handle-group:focus-visible .bezier-editor__handle,
 .bezier-editor__handle--active {
   fill: var(--accent);
 }
 
-/* Active state via CSS pseudo-class (JS class fallback kept above) */
-.bezier-editor__handle-group:active .bezier-editor__handle {
-  fill: var(--accent);
-}
-
-.bezier-editor__handle-group:active .bezier-editor__handle-dot {
+.bezier-editor__handle-group:focus-visible .bezier-editor__handle-dot,
+.bezier-editor__handle-dot--active {
   fill: var(--surface-default);
   filter: drop-shadow(0 0 6px var(--accent));
-}
-/* Focus ring for keyboard-navigable handle groups */
-.bezier-editor__handle-group:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
 }
 
 /* Inner diamond of the draggable handle */
@@ -124,11 +128,6 @@
   fill: var(--accent);
   pointer-events: none;
   transition: fill 0.15s ease;
-}
-
-.bezier-editor__handle-group:focus-visible .bezier-editor__handle-dot {
-  fill: var(--surface-default);
-  filter: drop-shadow(0 0 6px var(--accent));
 }
 
 /* Value labels beside anchor handles */
