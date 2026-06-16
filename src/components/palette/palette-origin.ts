@@ -111,8 +111,15 @@ class PaletteOrigin extends HTMLElement {
     if (!input) return;
     try {
       const color = new Color(input.value);
-      const [l = 0.5, c = 0.15, h = 264] = color.oklch as number[];
-      this.#emitChange(l, c, h);
+      const [l, c, h] = color.oklch as number[];
+      // `Number.isFinite` catches NaN, unlike destructuring defaults.
+      // If chroma is 0 (achromatic pick) or hue is NaN, keep the existing
+      // hue — the user is likely shifting lightness, not discarding the
+      // color family. A finite hue of 0 with non-zero chroma is valid (red).
+      const safeL = Number.isFinite(l) ? l : this.#l;
+      const safeC = Number.isFinite(c) ? c : this.#c;
+      const safeH = c === 0 || !Number.isFinite(h) ? this.#h : h;
+      this.#emitChange(safeL, safeC, safeH);
     } catch {
       // Unparseable color — ignore
     }
@@ -124,8 +131,11 @@ class PaletteOrigin extends HTMLElement {
     if (!value) return;
     try {
       const color = new Color(value);
-      const [l = 0.5, c = 0.15, h = 264] = color.oklch as number[];
-      this.#emitChange(l, c, h);
+      const [l, c, h] = color.oklch as number[];
+      const safeL = Number.isFinite(l) ? l : this.#l;
+      const safeC = Number.isFinite(c) ? c : this.#c;
+      const safeH = c === 0 || !Number.isFinite(h) ? this.#h : h;
+      this.#emitChange(safeL, safeC, safeH);
     } catch {
       // Invalid — reset to current origin hex
       input.value = originToHex({ l: this.#l, c: this.#c, h: this.#h });

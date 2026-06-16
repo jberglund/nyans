@@ -69,6 +69,9 @@ export interface ChromaCurveOptions {
  * @param lightness  Per-step lightness values (e.g. state.lightness)
  * @param opts       Optional smoothing configuration
  */
+/** Minimum fill ratio so the chroma curve never fully flatlines. */
+const MIN_FILL_RATIO = 0.05;
+
 export function deriveChromaCurve(
   origin: { l: number; c: number; h: number },
   lightness: Curve,
@@ -76,7 +79,8 @@ export function deriveChromaCurve(
   opts?: ChromaCurveOptions,
 ): Curve {
   const maxOriginC = maxInGamutChroma(origin.l, origin.h, DERIVATION_GAMUT);
-  const fillRatio = maxOriginC > 0 ? clamp01(origin.c / maxOriginC) : 0;
+  const rawRatio = maxOriginC > 0 ? clamp01(origin.c / maxOriginC) : 0;
+  const fillRatio = Math.max(rawRatio, MIN_FILL_RATIO);
 
   // Build the raw ceiling array
   const ceilings = steps.map((step) =>
