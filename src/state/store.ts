@@ -173,8 +173,9 @@ export class Store {
   load(state: State): void {
     this.#state = structuredClone(state);
     this.#buildStepIndex();
+    // Re-derive lightness so it can never drift from bezierControls, but
+    // leave chroma alone — the URL is the source of truth for user edits.
     this.#state.lightness = bezierToCurve(this.#state.bezierControls, this.#state.settings.steps);
-    this.#recalculateAllChroma();
     this.#notify();
   }
 

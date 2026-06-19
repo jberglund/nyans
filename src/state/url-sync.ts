@@ -140,6 +140,9 @@ function syncToUrl(state: State): void {
   if (state.settings.ceilingGamut !== DEFAULT_SETTINGS.ceilingGamut) {
     parts.push(`ceiling=${state.settings.ceilingGamut}`);
   }
+  if (state.settings.propagateDecay !== DEFAULT_SETTINGS.propagateDecay) {
+    parts.push(`propagate-decay=${enc(state.settings.propagateDecay)}`);
+  }
   if (state.settings.chromaSmoothFactor !== DEFAULT_SETTINGS.chromaSmoothFactor) {
     parts.push(`chroma-smooth=${enc(state.settings.chromaSmoothFactor)}`);
   }
@@ -250,12 +253,25 @@ function parseOrigin(raw: string): { l: number; c: number; h: number } | null {
 function parseSettings(params: URLSearchParams, steps: string[]): AppSettings {
   const maxChromaRaw = params.get("max-chroma");
   const ceilingRaw = params.get("ceiling");
+  const propagateDecayRaw = params.get("propagate-decay");
+  const chromaSmoothRaw = params.get("chroma-smooth");
 
   let maxChroma = DEFAULT_SETTINGS.maxChroma;
   if (maxChromaRaw !== null) {
     const n = Number(maxChromaRaw);
-    // max-chroma is encoded ×1000 like everything else
     if (Number.isFinite(n)) maxChroma = dec(n);
+  }
+
+  let propagateDecay = DEFAULT_SETTINGS.propagateDecay;
+  if (propagateDecayRaw !== null) {
+    const n = Number(propagateDecayRaw);
+    if (Number.isFinite(n)) propagateDecay = dec(n);
+  }
+
+  let chromaSmoothFactor = DEFAULT_SETTINGS.chromaSmoothFactor;
+  if (chromaSmoothRaw !== null) {
+    const n = Number(chromaSmoothRaw);
+    if (Number.isFinite(n)) chromaSmoothFactor = dec(n);
   }
 
   const ceilingGamut =
@@ -267,8 +283,8 @@ function parseSettings(params: URLSearchParams, steps: string[]): AppSettings {
     steps,
     maxChroma,
     ceilingGamut,
-    propagateDecay: DEFAULT_SETTINGS.propagateDecay,
-    chromaSmoothFactor: DEFAULT_SETTINGS.chromaSmoothFactor,
+    propagateDecay,
+    chromaSmoothFactor,
   };
 }
 
